@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sub Tools - A Collection of Subtitle Utilities</title>
-    
     <link rel="stylesheet" href="style.css">
-    
     <link rel="stylesheet" href="tools/1-coordinator/style.css">
     <link rel="stylesheet" href="tools/2-translator/style.css">
     <link rel="stylesheet" href="tools/3-converter/style.css">
     <link rel="stylesheet" href="tools/4-extractor/style.css">
-    
     <script src="tools/4-extractor/coi-serviceworker.js"></script>
 </head>
 <body>
@@ -20,177 +17,66 @@
             <h1>Sub Tools 🛠️</h1>
             <p>A complete collection of online utilities for working with subtitles.</p>
         </header>
-        
         <nav class="app-nav">
-            <a href="#" class="nav-link active" data-tool="coordinator-tool">Timeline Coordinator</a>
-            <a href="#" class="nav-link" data-tool="translator-tool">Subtitle Translator</a>
-            <a href="#" class="nav-link" data-tool="converter-tool">Format Converter</a>
-            <a href="#" class="nav-link" data-tool="extractor-tool">Video Extractor</a>
+            <a href="#" class="nav-link active" data-tool="coordinator">Timeline Coordinator</a>
+            <a href="#" class="nav-link" data-tool="translator">Subtitle Translator</a>
+            <a href="#" class="nav-link" data-tool="converter">Format Converter</a>
+            <a href="#" class="nav-link" data-tool="extractor">Video Extractor</a>
         </nav>
-
         <main class="app-main">
-            <div id="coordinator-tool" class="tool-content active">
+            <div id="coordinator-tool" class="tool-content">
                 <div class="container">
-                    <header>
-                        <h1>SRT Subtitle Timeline Coordinator</h1>
-                        <p>Upload your SRT file and easily edit its timeline.</p>
-                    </header>
-                    <div class="controls">
-                        <input type="file" id="fileInput" accept=".srt">
-                        <label for="fileInput" class="custom-file-upload">Choose SRT File</label>
-                        <button id="saveButton" disabled>Save Changes</button>
-                    </div>
-                    <div class="timeline-shifter">
-                        <h3>Global/Selected Timeline Shift</h3>
-                        <p>Adjusts all subtitles or only the selected ones. Use checkboxes to select specific lines.</p>
-                        <div class="shift-controls">
-                            <input type="number" id="shiftHours" placeholder="HH" min="0">
-                            <input type="number" id="shiftMinutes" placeholder="MM" min="0" max="59">
-                            <input type="number" id="shiftSeconds" placeholder="SS" min="0" max="59">
-                            <input type="number" id="shiftMilliseconds" placeholder="ms" min="0" max="999">
-                            <button id="shiftForwardButton">Shift Forward (+)</button>
-                            <button id="shiftBackwardButton">Shift Backward (-)</button>
-                        </div>
-                    </div>
-                    <div id="subtitle-container"></div>
+                    <header><h1>SRT Subtitle Timeline Coordinator</h1><p>Upload your SRT file and easily edit its timeline.</p></header>
+                    <div class="controls"><input type="file" id="coordinator-fileInput" accept=".srt"><label for="coordinator-fileInput" class="custom-file-upload">Choose SRT File</label><button id="coordinator-saveButton" disabled>Save Changes</button></div>
+                    <div class="timeline-shifter"><h3>Global/Selected Timeline Shift</h3><p>Adjusts all subtitles or only the selected ones.</p><div class="shift-controls"><input type="number" id="coordinator-shiftHours" placeholder="HH" min="0"><input type="number" id="coordinator-shiftMinutes" placeholder="MM" min="0" max="59"><input type="number" id="coordinator-shiftSeconds" placeholder="SS" min="0" max="59"><input type="number" id="coordinator-shiftMilliseconds" placeholder="ms" min="0" max="999"><button id="coordinator-shiftForwardButton">Shift Forward (+)</button><button id="coordinator-shiftBackwardButton">Shift Backward (-)</button></div></div>
+                    <div class="subtitle-list-header"><div class="select-all-container"><input type="checkbox" id="coordinator-selectAllCheckbox"><label for="coordinator-selectAllCheckbox">Select All</label></div></div>
+                    <div id="coordinator-subtitle-container"></div>
                 </div>
             </div>
-            
             <div id="translator-tool" class="tool-content">
                 <div class="container">
-                     <header>
-                        <h1>SRT Subtitle Translator</h1>
-                        <p>A complete tool with translation, editing, and line management features.</p>
-                    </header>
-                    <div class="card" id="upload-card">
-                        <div class="controls">
-                            <input type="file" id="fileInput" accept=".srt">
-                            <label for="fileInput" class="custom-file-upload">Choose SRT File</label>
-                            <span id="file-name">No file selected</span>
-                        </div>
-                    </div>
-                    <div class="card hidden" id="translator-card">
-                        <div class="card-header">
-                            <h2>Translation Editor</h2>
-                            <span class="autosave-status" id="autosave-status"></span>
-                        </div>
-                        <div class="editor-actions">
-                            <button id="add-line-btn" title="Adds a new line before the first selected line">Add New Line</button>
-                            <button id="delete-lines-btn" title="Deletes all selected lines">Delete Selected</button>
-                        </div>
-                        <div class="find-replace-container">
-                            <input type="text" id="find-input" placeholder="Find...">
-                            <input type="text" id="replace-input" placeholder="Replace with...">
-                            <div class="find-replace-buttons">
-                                <button id="find-next-btn">Find Next</button>
-                                <button id="replace-btn">Replace</button>
-                                <button id="replace-all-btn">Replace All</button>
-                            </div>
-                            <span id="find-replace-status" class="find-replace-status"></span>
-                        </div>
-                        <div class="translator-table-container">
-                            <table id="subtitle-table">
-                                <thead>
-                                    <tr>
-                                        <th><input type="checkbox" id="select-all-checkbox" title="Select/Deselect All"></th>
-                                        <th>#</th>
-                                        <th>Timestamp</th>
-                                        <th>Original Text</th>
-                                        <th>Translated Text</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="subtitle-body"></tbody>
-                            </table>
-                        </div>
-                         <button id="saveButton">Save Translated File</button>
+                    <header><h1>SRT Subtitle Translator</h1><p>A complete tool with translation, editing, and line management features.</p></header>
+                    <div class="card"><div class="controls"><input type="file" id="translator-fileInput" accept=".srt"><label for="translator-fileInput" class="custom-file-upload">Choose SRT File</label><span id="translator-file-name">No file selected</span></div></div>
+                    <div class="card hidden" id="translator-editor-card">
+                        <div class="card-header"><h2>Translation Editor</h2><span class="autosave-status" id="translator-autosave-status"></span></div>
+                        <div class="editor-actions"><button id="translator-add-line-btn">Add New Line</button><button id="translator-delete-lines-btn">Delete Selected</button></div>
+                        <div class="find-replace-container"><input type="text" id="translator-find-input" placeholder="Find..."><input type="text" id="translator-replace-input" placeholder="Replace with..."><div class="find-replace-buttons"><button id="translator-find-next-btn">Find Next</button><button id="translator-replace-btn">Replace</button><button id="translator-replace-all-btn">Replace All</button></div><span id="translator-find-replace-status" class="find-replace-status"></span></div>
+                        <div class="translator-table-container"><table id="translator-subtitle-table"><thead><tr><th><input type="checkbox" id="translator-select-all-checkbox"></th><th>#</th><th>Timestamp</th><th>Original Text</th><th>Translated Text</th></tr></thead><tbody id="translator-subtitle-body"></tbody></table></div>
+                        <button id="translator-saveButton">Save Translated File</button>
                     </div>
                 </div>
             </div>
-
             <div id="converter-tool" class="tool-content">
                 <div class="card">
-                    <header>
-                        <h1>Professional Subtitle Converter</h1>
-                        <p>Drag & drop files or select them to convert.</p>
-                    </header>
-                    <main>
-                        <div id="upload-area" class="upload-area">
-                            <input type="file" id="file-input" accept=".srt, .vtt, .ass, .ssa, .sub" multiple>
-                            <label for="file-input" class="file-label">
-                                <span>Choose File(s) or Drag & Drop Here</span>
-                                <small id="file-name">No files selected</small>
-                            </label>
-                        </div>
-                        <div class="controls">
-                            <div class="control-group">
-                                <label for="output-format">Convert to Format:</label>
-                                <select id="output-format">
-                                    <option value="srt">SRT (.srt)</option>
-                                    <option value="vtt">VTT (.vtt)</option>
-                                    <option value="txt">TXT (Plain Text)</option>
-                                </select>
-                            </div>
-                            <div class="control-group hidden" id="styling-options">
-                                <input type="checkbox" id="remove-styling" checked>
-                                <label for="remove-styling">Remove styling tags (from .ass/.ssa)</label>
-                            </div>
-                            <button id="convert-btn" disabled>Convert & Download</button>
-                        </div>
-                        <div id="status-message" class="status"></div>
+                    <header><h1>Professional Subtitle Converter</h1><p>Drag & drop files or select them to convert.</p></header>
+                    <main><div id="converter-upload-area" class="upload-area"><input type="file" id="converter-file-input" accept=".srt, .vtt, .ass, .ssa, .sub" multiple><label for="converter-file-input" class="file-label"><span>Choose File(s) or Drag & Drop Here</span><small id="converter-file-name">No files selected</small></label></div>
+                        <div class="controls"><div class="control-group"><label for="converter-output-format">Convert to Format:</label><select id="converter-output-format"><option value="srt">SRT</option><option value="vtt">VTT</option><option value="txt">TXT</option></select></div><div class="control-group hidden" id="converter-styling-options"><input type="checkbox" id="converter-remove-styling" checked><label for="converter-remove-styling">Remove styling</label></div><button id="converter-convert-btn" disabled>Convert & Download</button></div>
+                        <div id="converter-status-message" class="status"></div>
                     </main>
                 </div>
             </div>
-
             <div id="extractor-tool" class="tool-content">
                 <div class="card">
-                    <header>
-                        <h1>Professional Subtitle Extractor</h1>
-                        <p>Extract multiple tracks and select the output format.</p>
-                    </header>
+                    <header><h1>Professional Subtitle Extractor</h1><p>Extract multiple tracks and select the output format.</p></header>
                     <main>
-                        <div class="upload-area">
-                            <input type="file" id="video-input" accept="video/mp4, video/x-matroska, video/quicktime, .mkv">
-                            <label for="video-input" class="file-label">
-                                <span>Select Video File</span>
-                            </label>
-                        </div>
-                        <div class="status-box">
-                            <p id="status-text">Select a video file (MKV, MP4) to begin.</p>
-                            <progress id="progress-bar" value="0" max="100" class="hidden"></progress>
-                        </div>
-                        <div id="tracks-container" class="tracks-container hidden">
-                            <h3>Found Subtitle Tracks:</h3>
-                            <div id="tracks-list"></div>
-                            <div class="output-options">
-                                <label for="output-format">Convert to Format:</label>
-                                <select id="output-format">
-                                    <option value="original">Original Format</option>
-                                    <option value="srt">SRT</option>
-                                    <option value="vtt">VTT</option>
-                                </select>
-                            </div>
-                            <button id="extract-btn" disabled>Extract Selected</button>
-                            <div id="preview-box" class="preview-box hidden">
-                                <h4>Preview:</h4>
-                                <pre id="preview-content"></pre>
-                            </div>
+                        <div class="upload-area"><input type="file" id="extractor-video-input" accept="video/*"><label for="extractor-video-input" class="file-label"><span>Select Video File</span></label></div>
+                        <div class="status-box"><p id="extractor-status-text">Select a video file to begin.</p><progress id="extractor-progress-bar" value="0" max="100" class="hidden"></progress></div>
+                        <div id="extractor-tracks-container" class="tracks-container hidden">
+                            <h3>Found Subtitle Tracks:</h3><div id="extractor-tracks-list"></div>
+                            <div class="output-options"><label for="extractor-output-format">Convert to Format:</label><select id="extractor-output-format"><option value="original">Original Format</option><option value="srt">SRT</option><option value="vtt">VTT</option></select></div>
+                            <button id="extractor-extract-btn" disabled>Extract Selected</button>
+                            <div id="extractor-preview-box" class="preview-box hidden"><h4>Preview:</h4><pre id="extractor-preview-content"></pre></div>
                         </div>
                     </main>
                 </div>
             </div>
         </main>
     </div>
-
-    <footer class="app-footer">
-        Created with ❤️ by GeekNeuron
-    </footer>
-
+    <footer class="app-footer">Created with ❤️ by GeekNeuron</footer>
     <script src="script.js"></script>
-    
     <script src="tools/1-coordinator/script.js"></script>
     <script src="tools/2-translator/script.js"></script>
     <script src="tools/3-converter/script.js"></script>
-    
     <script src="assets/jszip/jszip.min.js"></script>
     <script src="assets/ffmpeg/ffmpeg.min.js"></script>
     <script src="tools/4-extractor/script.js"></script>
