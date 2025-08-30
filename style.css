@@ -1,3 +1,4 @@
+/* Local Font Definition */
 @font-face {
   font-family: 'Vazirmatn';
   src: url('assets/fonts/Vazirmatn-Regular.woff2') format('woff2');
@@ -16,7 +17,7 @@
     --nav-active-bg: var(--card-background);
     --footer-bg: #f8f9fa;
     --border-radius: 8px;
-    --font-family: 'Vazirmatn', sans-serif;
+    --font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
@@ -41,8 +42,16 @@ body {
     text-align: center;
     margin-bottom: 20px;
 }
-.app-header h1 { margin: 0; font-size: 2rem; }
-.app-header p { margin: 5px 0 0; opacity: 0.8; }
+
+.app-header h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.app-header p {
+    margin: 5px 0 0;
+    opacity: 0.8;
+}
 
 .app-nav {
     display: flex;
@@ -51,6 +60,7 @@ body {
     overflow: hidden;
     margin-bottom: 20px;
 }
+
 .nav-link {
     flex: 1;
     padding: 15px;
@@ -59,10 +69,17 @@ body {
     color: #495057;
     font-weight: 500;
     transition: background-color 0.3s;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
 }
+
 .nav-link:hover {
     background-color: #dee2e6;
 }
+
 .nav-link.active {
     background-color: var(--nav-active-bg);
     color: var(--primary-color);
@@ -74,15 +91,18 @@ body {
     border-radius: var(--border-radius);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
     padding: 30px;
+    min-height: 50vh;
 }
 
 .tool-content {
     display: none;
 }
+
 .tool-content.active {
     display: block;
     animation: fadeIn 0.5s;
 }
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
