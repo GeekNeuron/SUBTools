@@ -70,7 +70,7 @@ input[type="file"] { display: none; }
 #shiftForwardButton { background-color: var(--success-color); }
 #shiftBackwardButton { background-color: var(--danger-color); }
 
-/* Subtitle List */
+/* Subtitle List  */
 .subtitle-list-header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--light-bg); border-radius: var(--border-radius) var(--border-radius) 0 0; border: 1px solid var(--border-color); border-bottom: none; margin-top: 20px; font-weight: 600; }
 .select-all-container { display: flex; align-items: center; gap: 8px; }
 #subtitle-container { max-height: 500px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0 0 var(--border-radius) var(--border-radius); background-color: #fff; }
