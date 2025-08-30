@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sub Tools - A Collection of Subtitle Utilities</title>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="style.css">
+    
     <link rel="stylesheet" href="tools/1-coordinator/style.css">
     <link rel="stylesheet" href="tools/2-translator/style.css">
     <link rel="stylesheet" href="tools/3-converter/style.css">
     <link rel="stylesheet" href="tools/4-extractor/style.css">
+    
+    <script src="tools/4-extractor/coi-serviceworker.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -26,7 +29,7 @@
         </nav>
 
         <main class="app-main">
-            <div id="coordinator-tool" class="tool-content active">
+            <div id="coordinator-tool" class="tool-content">
                 </div>
             <div id="translator-tool" class="tool-content">
                 </div>
@@ -42,12 +45,13 @@
     </footer>
 
     <script src="script.js"></script>
+    
     <script src="tools/1-coordinator/script.js"></script>
     <script src="tools/2-translator/script.js"></script>
     <script src="tools/3-converter/script.js"></script>
-    <script src="tools/4-extractor/coi-serviceworker.js"></script>
-    <script src="assets/ffmpeg/ffmpeg.min.js"></script>
+    
     <script src="assets/jszip/jszip.min.js"></script>
+    <script src="assets/ffmpeg/ffmpeg.min.js"></script>
     <script src="tools/4-extractor/script.js"></script>
 </body>
 </html>
