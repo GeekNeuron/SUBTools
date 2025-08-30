@@ -24,6 +24,11 @@ h1 { color: var(--primary-color); }
 .hidden { display: none; }
 
 /* Header & Upload */
+#translator-tool .card {
+    background: #fff;
+    padding: 25px;
+}
+
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .autosave-status { font-size: 0.9rem; color: var(--text-muted); font-weight: normal; }
 .controls { display: flex; align-items: center; gap: 15px; }
