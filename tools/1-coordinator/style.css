@@ -1,116 +1,286 @@
-:root {
-    --primary-color: #0d6efd;
-    --primary-hover: #0b5ed7;
-    --success-color: #198754;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
-    --light-bg: #f8f9fa;
-    --white-bg: #ffffff;
-    --border-color: #dee2e6;
-    --text-color: #212529;
-    --text-muted: #6c757d;
-    --font-family: 'Vazirmatn', sans-serif;
-    --border-radius: 8px;
-    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
-}
+/* All rules are now scoped to the #coordinator-tool container */
 
-body {
-    font-family: var(--font-family);
-    background-color: var(--light-bg);
-    color: var(--text-color);
-    margin: 0;
-    padding: 20px 10px;
-}
-
-.container {
+#coordinator-tool .container {
     max-width: 900px;
     margin: 0 auto;
 }
 
-header {
+#coordinator-tool header {
     text-align: center;
     margin-bottom: 30px;
 }
 
-header h1 {
-    color: var(--primary-color);
+#coordinator-tool header h1 {
+    color: var(--primary-color, #0d6efd);
     font-weight: 700;
 }
 
-header p {
-    color: var(--text-muted);
+#coordinator-tool header p {
+    color: var(--text-muted, #6c757d);
     font-size: 1.1rem;
 }
 
 #coordinator-tool .card {
-    background: var(--white-bg);
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
+    background: var(--white-bg, #ffffff);
+    border-radius: var(--border-radius, 8px);
+    box-shadow: var(--box-shadow, 0 4px 12px rgba(0, 0, 0, 0.07));
     padding: 25px;
     margin-bottom: 20px;
     transition: all 0.3s ease-in-out;
 }
 
-.card.hidden { display: none; }
-.card h2 { margin-top: 0; margin-bottom: 20px; font-weight: 600; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+#coordinator-tool .card.hidden {
+    display: none;
+}
+
+#coordinator-tool .card h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color, #dee2e6);
+    padding-bottom: 10px;
+}
 
 /* Upload Section */
-.controls { display: flex; align-items: center; gap: 15px; }
-input[type="file"] { display: none; }
-.custom-file-upload { display: inline-block; padding: 10px 20px; cursor: pointer; background-color: var(--primary-color); color: white; border-radius: 5px; font-size: 1rem; transition: background-color 0.3s; }
-.custom-file-upload:hover { background-color: var(--primary-hover); }
-#file-name { color: var(--text-muted); font-size: 0.9rem; }
+#coordinator-tool .controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#coordinator-tool input[type="file"] {
+    display: none;
+}
+
+#coordinator-tool .custom-file-upload {
+    display: inline-block;
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: var(--primary-color, #0d6efd);
+    color: white;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+#coordinator-tool .custom-file-upload:hover {
+    background-color: var(--primary-hover, #0b5ed7);
+}
+
+#coordinator-tool #file-name {
+    color: var(--text-muted, #6c757d);
+    font-size: 0.9rem;
+}
 
 /* Shifter Section */
-.timeline-shifter p { margin-top: 0; color: var(--text-muted); }
-.shift-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
-.shift-controls input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; text-align: center; font-size: 1rem; box-sizing: border-box; }
-.shift-buttons { display: flex; gap: 10px; }
-.shift-buttons button { flex-grow: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 15px; border: none; color: white; border-radius: 5px; cursor: pointer; font-size: 1rem; font-family: var(--font-family); transition: background-color 0.3s; }
-#shiftForwardButton { background-color: var(--success-color); }
-#shiftBackwardButton { background-color: var(--danger-color); }
+#coordinator-tool .timeline-shifter p {
+    margin-top: 0;
+    color: var(--text-muted, #6c757d);
+}
 
-/* Subtitle List  */
-.subtitle-list-header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--light-bg); border-radius: var(--border-radius) var(--border-radius) 0 0; border: 1px solid var(--border-color); border-bottom: none; margin-top: 20px; font-weight: 600; }
-.select-all-container { display: flex; align-items: center; gap: 8px; }
-#subtitle-container { max-height: 500px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 0 0 var(--border-radius) var(--border-radius); background-color: #fff; }
-.subtitle-item { display: flex; padding: 12px; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s; cursor: pointer; gap: 15px; }
-.subtitle-item:last-child { border-bottom: none; }
-.subtitle-item.selected { background-color: #e7f1ff; }
-.subtitle-item input[type="checkbox"] { margin-top: 5px; min-width: 16px; height: 16px; }
-.subtitle-content { flex-grow: 1; }
-.subtitle-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.subtitle-time { font-family: monospace; font-size: 0.95rem; color: var(--primary-color); font-weight: 500; }
-.subtitle-text { line-height: 1.6; }
+#coordinator-tool .shift-controls {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
 
-/* NEW: CPS Warning */
-.cps-warning { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background-color: var(--warning-color); color: #333; border-radius: 50%; font-size: 12px; font-weight: bold; cursor: help; }
-.cps-warning .tooltip { visibility: hidden; width: 220px; background-color: #333; color: #fff; text-align: center; border-radius: 6px; padding: 5px 10px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -110px; opacity: 0; transition: opacity 0.3s; font-size: 0.8rem; font-weight: 400; }
-.cps-warning:hover .tooltip { visibility: visible; opacity: 1; }
-.subtitle-item.has-warning { border-left: 4px solid var(--warning-color); }
+#coordinator-tool .shift-controls input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 5px;
+    text-align: center;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
 
-/* NEW: Visual Timeline */
-.timeline-bar-container { width: 100%; background-color: #e9ecef; border-radius: 4px; height: 8px; margin-top: 10px; overflow: hidden; }
-.timeline-bar { height: 100%; background-color: var(--primary-color); border-radius: 4px; }
+#coordinator-tool .shift-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+#coordinator-tool .shift-buttons button {
+    flex-grow: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-family: var(--font-family);
+    transition: background-color 0.3s;
+}
+
+#coordinator-tool #shiftForwardButton {
+    background-color: var(--success-color, #198754);
+}
+
+#coordinator-tool #shiftBackwardButton {
+    background-color: var(--danger-color, #dc3545);
+}
+
+/* Subtitle List */
+#coordinator-tool .subtitle-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: var(--light-bg, #f8f9fa);
+    border-radius: var(--border-radius, 8px) var(--border-radius, 8px) 0 0;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-bottom: none;
+    margin-top: 20px;
+    font-weight: 600;
+}
+
+#coordinator-tool .select-all-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#coordinator-tool #subtitle-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color, #dee2e6);
+    border-radius: 0 0 var(--border-radius, 8px) var(--border-radius, 8px);
+    background-color: #fff;
+}
+
+#coordinator-tool .subtitle-item {
+    display: flex;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color, #dee2e6);
+    transition: background-color 0.2s;
+    cursor: pointer;
+    gap: 15px;
+}
+
+#coordinator-tool .subtitle-item:last-child {
+    border-bottom: none;
+}
+
+#coordinator-tool .subtitle-item.selected {
+    background-color: #e7f1ff;
+}
+
+#coordinator-tool .subtitle-item input[type="checkbox"] {
+    margin-top: 5px;
+    min-width: 16px;
+    height: 16px;
+}
+
+#coordinator-tool .subtitle-content {
+    flex-grow: 1;
+}
+
+#coordinator-tool .subtitle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+#coordinator-tool .subtitle-time {
+    font-family: monospace;
+    font-size: 0.95rem;
+    color: var(--primary-color, #0d6efd);
+    font-weight: 500;
+}
+
+#coordinator-tool .subtitle-text {
+    line-height: 1.6;
+}
+
+/* CPS Warning */
+#coordinator-tool .cps-warning {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background-color: var(--warning-color, #ffc107);
+    color: #333;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: help;
+}
+
+#coordinator-tool .cps-warning .tooltip {
+    visibility: hidden;
+    width: 220px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 10px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -110px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+#coordinator-tool .cps-warning:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+#coordinator-tool .subtitle-item.has-warning {
+    border-left: 4px solid var(--warning-color, #ffc107);
+}
+
+/* Visual Timeline */
+#coordinator-tool .timeline-bar-container {
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    height: 8px;
+    margin-top: 10px;
+    overflow: hidden;
+}
+
+#coordinator-tool .timeline-bar {
+    height: 100%;
+    background-color: var(--primary-color, #0d6efd);
+    border-radius: 4px;
+}
 
 /* Save Button & Footer */
-#saveButton { width: 100%; padding: 12px 20px; background-color: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1rem; font-weight: 600; transition: background-color 0.3s; }
-#saveButton:hover { background-color: var(--primary-hover); }
+#coordinator-tool #saveButton {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: var(--primary-color, #0d6efd);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
 
-.hidden { display: none; }
-footer { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 20px; padding: 10px; background: #fff; border-radius: var(--border-radius); box-shadow: var(--box-shadow); }
-.shortcut { margin: 0 10px; background-color: #e9ecef; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
-
+#coordinator-tool #saveButton:hover {
+    background-color: var(--primary-hover, #0b5ed7);
+}
 
 /* Mobile Responsive */
 @media (max-width: 600px) {
-    body { padding: 10px; }
-    .card { padding: 15px; }
-    .controls { flex-direction: column; align-items: stretch; }
-    .custom-file-upload { text-align: center; }
-    #file-name { text-align: center; margin-top: 10px; }
-    .shift-controls { grid-template-columns: repeat(2, 1fr); }
-    .shift-buttons { flex-direction: column; }
-    footer { flex-direction: column; line-height: 1.8; }
-    .shortcut { display: block; margin: 5px auto; }
+    #coordinator-tool .card { padding: 15px; }
+    #coordinator-tool .controls { flex-direction: column; align-items: stretch; }
+    #coordinator-tool .custom-file-upload { text-align: center; }
+    #coordinator-tool #file-name { text-align: center; margin-top: 10px; }
+    #coordinator-tool .shift-controls { grid-template-columns: repeat(2, 1fr); }
+    #coordinator-tool .shift-buttons { flex-direction: column; }
 }
