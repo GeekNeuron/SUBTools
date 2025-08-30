@@ -1,3 +1,4 @@
+(function() {
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const fileInput = document.getElementById('file-input');
@@ -239,4 +240,5 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
         a.remove();
     }
-});
+   });
+})();
