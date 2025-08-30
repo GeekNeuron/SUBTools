@@ -1,72 +1,92 @@
-(function() {
-document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
-    const fileInput = document.getElementById('fileInput');
-    const fileNameSpan = document.getElementById('file-name');
-    const translatorCard = document.getElementById('translator-card');
-    const subtitleBody = document.getElementById('subtitle-body');
-    const saveButton = document.getElementById('saveButton');
-    const autoSaveStatus = document.getElementById('autosave-status');
-    const selectAllCheckbox = document.getElementById('select-all-checkbox');
-    const addLineBtn = document.getElementById('add-line-btn');
-    const deleteLinesBtn = document.getElementById('delete-lines-btn');
+// Create a namespace for our tools to avoid global scope conflicts
+window.SubTools = window.SubTools || {};
 
-    // Find and Replace Elements
-    const findInput = document.getElementById('find-input');
-    const replaceInput = document.getElementById('replace-input');
-    const findNextBtn = document.getElementById('find-next-btn');
-    const replaceBtn = document.getElementById('replace-btn');
-    const replaceAllBtn = document.getElementById('replace-all-btn');
-    const findReplaceStatus = document.getElementById('find-replace-status');
+// Define the module for the Subtitle Translator tool
+window.SubTools.translator = {
+    // Module-level properties
+    toolContainer: null,
+    subtitles: [],
+    originalFileName: 'translated.srt',
+    currentFileContent: '',
+    searchState: { currentIndex: -1, searchTerm: '' },
+    elements: {}, // To hold DOM element references
 
-    let subtitles = [];
-    let originalFileName = 'translated.srt';
-    let currentFileContent = '';
+    // The init method is called by the main hub script to start the tool
+    init: function(containerId) {
+        this.toolContainer = document.getElementById(containerId);
+        if (!this.toolContainer) {
+            console.error(`Container with id "${containerId}" not found for Translator tool.`);
+            return;
+        }
 
-    // State for Find and Replace
-    let searchState = {
-        currentIndex: -1,
-        searchTerm: ''
-    };
+        // Scope all element queries to the tool's container
+        this.elements = {
+            fileInput: this.toolContainer.querySelector('#fileInput'),
+            fileNameSpan: this.toolContainer.querySelector('#file-name'),
+            translatorCard: this.toolContainer.querySelector('#translator-card'),
+            subtitleBody: this.toolContainer.querySelector('#subtitle-body'),
+            saveButton: this.toolContainer.querySelector('#saveButton'),
+            autoSaveStatus: this.toolContainer.querySelector('#autosave-status'),
+            selectAllCheckbox: this.toolContainer.querySelector('#select-all-checkbox'),
+            addLineBtn: this.toolContainer.querySelector('#add-line-btn'),
+            deleteLinesBtn: this.toolContainer.querySelector('#delete-lines-btn'),
+            findInput: this.toolContainer.querySelector('#find-input'),
+            replaceInput: this.toolContainer.querySelector('#replace-input'),
+            findNextBtn: this.toolContainer.querySelector('#find-next-btn'),
+            replaceBtn: this.toolContainer.querySelector('#replace-btn'),
+            replaceAllBtn: this.toolContainer.querySelector('#replace-all-btn'),
+            findReplaceStatus: this.toolContainer.querySelector('#find-replace-status')
+        };
+        
+        // Bind event listeners
+        this.elements.fileInput.addEventListener('change', this.handleFileSelect.bind(this));
+        this.elements.saveButton.addEventListener('click', this.saveTranslatedFile.bind(this));
+        this.elements.findNextBtn.addEventListener('click', this.handleFindNext.bind(this));
+        this.elements.replaceBtn.addEventListener('click', this.handleReplace.bind(this));
+        this.elements.replaceAllBtn.addEventListener('click', this.handleReplaceAll.bind(this));
+        this.elements.selectAllCheckbox.addEventListener('change', this.handleSelectAll.bind(this));
+        this.elements.addLineBtn.addEventListener('click', this.handleAddLine.bind(this));
+        this.elements.deleteLinesBtn.addEventListener('click', this.handleDeleteLines.bind(this));
+
+        console.log('Translator tool initialized.');
+    },
+
+    // The destroy method is called when switching to another tool
+    destroy: function() {
+        // Reset state for a clean re-initialization
+        this.subtitles = [];
+        this.originalFileName = 'translated.srt';
+        this.currentFileContent = '';
+        this.searchState = { currentIndex: -1, searchTerm: '' };
+        console.log('Translator tool destroyed.');
+    },
     
-    const CHAR_LIMIT_PER_LINE = 42;
-
-    // --- Main Event Listeners ---
-    fileInput.addEventListener('change', handleFileSelect);
-    saveButton.addEventListener('click', saveTranslatedFile);
-    findNextBtn.addEventListener('click', handleFindNext);
-    replaceBtn.addEventListener('click', handleReplace);
-    replaceAllBtn.addEventListener('click', handleReplaceAll);
-    selectAllCheckbox.addEventListener('change', handleSelectAll);
-    addLineBtn.addEventListener('click', handleAddLine);
-    deleteLinesBtn.addEventListener('click', handleDeleteLines);
-
     // --- Core Functions ---
 
-    function handleFileSelect(event) {
+    handleFileSelect: function(event) {
         const file = event.target.files[0];
         if (!file || !file.name.endsWith('.srt')) {
             alert('Please select a valid .srt file.');
             return;
         }
-        originalFileName = file.name.replace('.srt', '_translated.srt');
-        fileNameSpan.textContent = file.name;
+        this.originalFileName = file.name.replace('.srt', '_translated.srt');
+        this.elements.fileNameSpan.textContent = file.name;
         const reader = new FileReader();
         reader.onload = (e) => {
-            currentFileContent = e.target.result;
-            subtitles = parseSrt(currentFileContent);
-            if (subtitles.length > 0) {
-                renderTranslator();
-                loadAutoSavedTranslations();
-                translatorCard.classList.remove('hidden');
+            this.currentFileContent = e.target.result;
+            this.subtitles = this.parseSrt(this.currentFileContent);
+            if (this.subtitles.length > 0) {
+                this.renderTranslator();
+                this.loadAutoSavedTranslations();
+                this.elements.translatorCard.classList.remove('hidden');
             } else {
                 alert('The subtitle file appears to be empty or invalid.');
             }
         };
         reader.readAsText(file, 'UTF-8');
-    }
+    },
 
-    function parseSrt(data) {
+    parseSrt: function(data) {
         return data.trim().replace(/\r/g, '').split('\n\n').map(block => {
             const lines = block.split('\n');
             if (lines.length >= 2 && lines[1].includes('-->')) {
@@ -81,11 +101,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return null;
         }).filter(Boolean);
-    }
+    },
 
-    function renderTranslator() {
-        subtitleBody.innerHTML = '';
-        subtitles.forEach((sub, i) => {
+    renderTranslator: function() {
+        this.elements.subtitleBody.innerHTML = '';
+        this.subtitles.forEach((sub, i) => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td data-label="Select" class="col-select"><input type="checkbox" class="line-checkbox" data-index="${i}" ${sub.selected ? 'checked' : ''}></td>
@@ -100,27 +120,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </td>
             `;
-            subtitleBody.appendChild(row);
+            this.elements.subtitleBody.appendChild(row);
         });
-        attachEventListeners();
-        updateSelectAllCheckboxState();
-    }
+        this.attachEventListeners();
+        this.updateSelectAllCheckboxState();
+    },
 
-    function attachEventListeners() {
-        document.querySelectorAll('.line-checkbox').forEach(cb => cb.addEventListener('change', handleLineSelect));
-        document.querySelectorAll('.translation-input').forEach(textarea => {
-            textarea.addEventListener('input', handleTextareaInput);
-            textarea.addEventListener('keydown', handleTextareaKeyDown);
+    attachEventListeners: function() {
+        this.toolContainer.querySelectorAll('.line-checkbox').forEach(cb => cb.addEventListener('change', this.handleLineSelect.bind(this)));
+        this.toolContainer.querySelectorAll('.translation-input').forEach(textarea => {
+            textarea.addEventListener('input', this.handleTextareaInput.bind(this));
+            textarea.addEventListener('keydown', this.handleTextareaKeyDown.bind(this));
         });
-        document.querySelectorAll('.copy-original-btn').forEach(button => {
-            button.addEventListener('click', handleCopyOriginal);
+        this.toolContainer.querySelectorAll('.copy-original-btn').forEach(button => {
+            button.addEventListener('click', this.handleCopyOriginal.bind(this));
         });
-    }
+    },
 
     // --- Add/Delete/Selection Logic ---
 
-    function handleAddLine() {
-        const selectedIndex = subtitles.findIndex(sub => sub.selected);
+    handleAddLine: function() {
+        const selectedIndex = this.subtitles.findIndex(sub => sub.selected);
         if (selectedIndex === -1) {
             alert("Please select a line. The new line will be inserted before it.");
             return;
@@ -129,131 +149,131 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Cannot add a line before the first subtitle.");
             return;
         }
-        const prevSub = subtitles[selectedIndex - 1];
-        const nextSub = subtitles[selectedIndex];
-        const prevEndTime = timeToMilliseconds(prevSub.endTime);
-        const nextStartTime = timeToMilliseconds(nextSub.startTime);
+        const prevSub = this.subtitles[selectedIndex - 1];
+        const nextSub = this.subtitles[selectedIndex];
+        const prevEndTime = this.timeToMilliseconds(prevSub.endTime);
+        const nextStartTime = this.timeToMilliseconds(nextSub.startTime);
         const gap = nextStartTime - prevEndTime;
         if (gap < 200) { // Minimum 200ms gap required
             alert(`Not enough time (${gap}ms) between lines ${prevSub.index} and ${nextSub.index} to add a new line.`);
             return;
         }
         const newSubtitle = {
-            index: -1,
-            startTime: millisecondsToTime(prevEndTime + 1),
-            endTime: millisecondsToTime(nextStartTime - 1),
+            index: -1, // Will be set by reindexing
+            startTime: this.millisecondsToTime(prevEndTime + 1),
+            endTime: this.millisecondsToTime(nextStartTime - 1),
             text: "[New Line]",
             selected: false,
         };
-        subtitles.splice(selectedIndex, 0, newSubtitle);
-        reindexSubtitles();
-        renderTranslator();
-        loadAutoSavedTranslations();
-    }
+        this.subtitles.splice(selectedIndex, 0, newSubtitle);
+        this.reindexSubtitles();
+        this.renderTranslator();
+        this.loadAutoSavedTranslations();
+    },
 
-    function handleDeleteLines() {
-        const selectedCount = subtitles.filter(sub => sub.selected).length;
+    handleDeleteLines: function() {
+        const selectedCount = this.subtitles.filter(sub => sub.selected).length;
         if (selectedCount === 0) {
             alert("Please select one or more lines to delete.");
             return;
         }
         if (confirm(`Are you sure you want to delete ${selectedCount} selected line(s)? This cannot be undone.`)) {
-            subtitles = subtitles.filter(sub => !sub.selected);
-            reindexSubtitles();
-            renderTranslator();
-            loadAutoSavedTranslations();
+            this.subtitles = this.subtitles.filter(sub => !sub.selected);
+            this.reindexSubtitles();
+            this.renderTranslator();
+            this.loadAutoSavedTranslations();
         }
-    }
+    },
 
-    function reindexSubtitles() {
-        subtitles.forEach((sub, i) => {
+    reindexSubtitles: function() {
+        this.subtitles.forEach((sub, i) => {
             sub.index = i + 1;
         });
-    }
+    },
 
-    function handleLineSelect(event) {
+    handleLineSelect: function(event) {
         const index = parseInt(event.target.dataset.index, 10);
-        subtitles[index].selected = event.target.checked;
-        updateSelectAllCheckboxState();
-    }
+        this.subtitles[index].selected = event.target.checked;
+        this.updateSelectAllCheckboxState();
+    },
 
-    function handleSelectAll(event) {
+    handleSelectAll: function(event) {
         const isChecked = event.target.checked;
-        subtitles.forEach(sub => sub.selected = isChecked);
-        document.querySelectorAll('.line-checkbox').forEach(cb => cb.checked = isChecked);
-    }
+        this.subtitles.forEach(sub => sub.selected = isChecked);
+        this.toolContainer.querySelectorAll('.line-checkbox').forEach(cb => cb.checked = isChecked);
+    },
 
-    function updateSelectAllCheckboxState() {
-        const selectedCount = subtitles.filter(sub => sub.selected).length;
-        if (subtitles.length > 0) {
-            selectAllCheckbox.checked = selectedCount === subtitles.length;
-            selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < subtitles.length;
+    updateSelectAllCheckboxState: function() {
+        const selectedCount = this.subtitles.filter(sub => sub.selected).length;
+        if (this.subtitles.length > 0) {
+            this.elements.selectAllCheckbox.checked = selectedCount === this.subtitles.length;
+            this.elements.selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < this.subtitles.length;
         } else {
-            selectAllCheckbox.checked = false;
-            selectAllCheckbox.indeterminate = false;
+            this.elements.selectAllCheckbox.checked = false;
+            this.elements.selectAllCheckbox.indeterminate = false;
         }
-    }
+    },
 
     // --- Find and Replace Logic ---
 
-    function handleFindNext() {
-        const textareas = Array.from(document.querySelectorAll('.translation-input'));
-        const searchTerm = findInput.value;
+    handleFindNext: function() {
+        const textareas = Array.from(this.toolContainer.querySelectorAll('.translation-input'));
+        const searchTerm = this.elements.findInput.value;
         if (!searchTerm) {
-            findReplaceStatus.textContent = "Please enter text to find.";
+            this.elements.findReplaceStatus.textContent = "Please enter text to find.";
             return;
         }
-        if (searchState.searchTerm !== searchTerm) {
-            searchState.currentIndex = -1;
-            searchState.searchTerm = searchTerm;
-            clearHighlights();
+        if (this.searchState.searchTerm !== searchTerm) {
+            this.searchState.currentIndex = -1;
+            this.searchState.searchTerm = searchTerm;
+            this.clearHighlights();
         }
         let found = false;
         for (let i = 0; i < textareas.length; i++) {
-            let currentIndex = (searchState.currentIndex + 1 + i) % textareas.length;
+            let currentIndex = (this.searchState.currentIndex + 1 + i) % textareas.length;
             const textarea = textareas[currentIndex];
             if (textarea.value.toLowerCase().includes(searchTerm.toLowerCase())) {
-                clearHighlights();
+                this.clearHighlights();
                 textarea.classList.add('highlighted');
                 textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                findReplaceStatus.textContent = `Found in line #${subtitles[currentIndex].index}`;
-                searchState.currentIndex = currentIndex;
+                this.elements.findReplaceStatus.textContent = `Found in line #${this.subtitles[currentIndex].index}`;
+                this.searchState.currentIndex = currentIndex;
                 found = true;
                 break;
             }
         }
         if (!found) {
-            findReplaceStatus.textContent = "End of document reached. No more results.";
-            searchState.currentIndex = -1;
-            clearHighlights();
+            this.elements.findReplaceStatus.textContent = "End of document reached. No more results.";
+            this.searchState.currentIndex = -1;
+            this.clearHighlights();
         }
-    }
+    },
 
-    function handleReplace() {
-        if (searchState.currentIndex === -1 || !findInput.value) {
-            findReplaceStatus.textContent = "You must find text before you can replace it.";
+    handleReplace: function() {
+        if (this.searchState.currentIndex === -1 || !this.elements.findInput.value) {
+            this.elements.findReplaceStatus.textContent = "You must find text before you can replace it.";
             return;
         }
-        const textarea = document.querySelector(`.translation-input[data-id="${searchState.currentIndex}"]`);
-        const regex = new RegExp(findInput.value, 'i');
+        const textarea = this.toolContainer.querySelector(`.translation-input[data-id="${this.searchState.currentIndex}"]`);
+        const regex = new RegExp(this.elements.findInput.value, 'i');
         if (regex.test(textarea.value)) {
-            textarea.value = textarea.value.replace(regex, replaceInput.value);
+            textarea.value = textarea.value.replace(regex, this.elements.replaceInput.value);
             textarea.dispatchEvent(new Event('input', { bubbles: true }));
-            findReplaceStatus.textContent = "Replaced one occurrence.";
-            handleFindNext();
+            this.elements.findReplaceStatus.textContent = "Replaced one occurrence.";
+            this.handleFindNext();
         }
-    }
+    },
 
-    function handleReplaceAll() {
-        const findTerm = findInput.value;
-        const replaceTerm = replaceInput.value;
+    handleReplaceAll: function() {
+        const findTerm = this.elements.findInput.value;
+        const replaceTerm = this.elements.replaceInput.value;
         if (!findTerm) {
-            findReplaceStatus.textContent = "Please enter text to find and replace.";
+            this.elements.findReplaceStatus.textContent = "Please enter text to find and replace.";
             return;
         }
         let totalReplacements = 0;
         const regex = new RegExp(findTerm, 'gi');
-        document.querySelectorAll('.translation-input').forEach(textarea => {
+        this.toolContainer.querySelectorAll('.translation-input').forEach(textarea => {
             const originalValue = textarea.value;
             const newValue = originalValue.replace(regex, replaceTerm);
             if (originalValue !== newValue) {
@@ -262,86 +282,87 @@ document.addEventListener('DOMContentLoaded', () => {
                 textarea.dispatchEvent(new Event('input', { bubbles: true }));
             }
         });
-        findReplaceStatus.textContent = `Replaced ${totalReplacements} occurrence(s).`;
-        clearHighlights();
-        searchState.currentIndex = -1;
-    }
+        this.elements.findReplaceStatus.textContent = `Replaced ${totalReplacements} occurrence(s).`;
+        this.clearHighlights();
+        this.searchState.currentIndex = -1;
+    },
 
-    function clearHighlights() {
-        document.querySelectorAll('.translation-input.highlighted').forEach(el => el.classList.remove('highlighted'));
-    }
+    clearHighlights: function() {
+        this.toolContainer.querySelectorAll('.translation-input.highlighted').forEach(el => el.classList.remove('highlighted'));
+    },
 
     // --- UX Feature Handlers ---
 
-    function handleTextareaInput(event) {
+    handleTextareaInput: function(event) {
         const textarea = event.target;
         const charCounter = textarea.nextElementSibling.querySelector('.char-counter');
         const textLength = textarea.value.length;
+        const CHAR_LIMIT_PER_LINE = 42;
         charCounter.textContent = textLength;
         charCounter.classList.toggle('limit-exceeded', textarea.value.split('\n').some(line => line.length > CHAR_LIMIT_PER_LINE));
-        autoSaveTranslation(textarea.getAttribute('data-id'), textarea.value);
-    }
+        this.autoSaveTranslation(textarea.getAttribute('data-id'), textarea.value);
+    },
 
-    function handleCopyOriginal(event) {
+    handleCopyOriginal: function(event) {
         const textarea = event.target.closest('.col-translation').querySelector('textarea');
-        const originalText = subtitles[textarea.getAttribute('data-id')].text;
+        const originalText = this.subtitles[textarea.getAttribute('data-id')].text;
         textarea.value = originalText;
         textarea.focus();
         textarea.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+    },
 
-    function handleTextareaKeyDown(event) {
+    handleTextareaKeyDown: function(event) {
         if (event.ctrlKey && event.key === 'Enter') {
             event.preventDefault();
-            const nextTextarea = document.querySelector(`.translation-input[data-id="${parseInt(event.target.getAttribute('data-id')) + 1}"]`);
+            const nextTextarea = this.toolContainer.querySelector(`.translation-input[data-id="${parseInt(event.target.getAttribute('data-id')) + 1}"]`);
             if (nextTextarea) nextTextarea.focus();
-            else saveButton.focus();
+            else this.elements.saveButton.focus();
         }
-    }
+    },
 
     // --- Auto-Save & File Download Logic ---
 
-    function getAutoSaveKey() {
+    getAutoSaveKey: function() {
         let hash = 0;
-        for (let i = 0; i < currentFileContent.length; i++) {
-            hash = ((hash << 5) - hash) + currentFileContent.charCodeAt(i);
+        for (let i = 0; i < this.currentFileContent.length; i++) {
+            hash = ((hash << 5) - hash) + this.currentFileContent.charCodeAt(i);
             hash |= 0;
         }
         return `srt-translation-${hash}`;
-    }
+    },
 
-    function autoSaveTranslation(index, text) {
-        const key = getAutoSaveKey();
+    autoSaveTranslation: function(index, text) {
+        const key = this.getAutoSaveKey();
         try {
             let translations = JSON.parse(localStorage.getItem(key)) || {};
             translations[index] = text;
             localStorage.setItem(key, JSON.stringify(translations));
-            autoSaveStatus.textContent = 'Saved.';
-            setTimeout(() => autoSaveStatus.textContent = '', 2000);
+            this.elements.autoSaveStatus.textContent = 'Saved.';
+            setTimeout(() => { if (this.elements.autoSaveStatus) this.elements.autoSaveStatus.textContent = ''; }, 2000);
         } catch (e) {
             console.error("Failed to save to localStorage", e);
-            autoSaveStatus.textContent = 'Save Error!';
+            this.elements.autoSaveStatus.textContent = 'Save Error!';
         }
-    }
+    },
 
-    function loadAutoSavedTranslations() {
-        const key = getAutoSaveKey();
+    loadAutoSavedTranslations: function() {
+        const key = this.getAutoSaveKey();
         const savedTranslations = JSON.parse(localStorage.getItem(key));
         if (savedTranslations) {
-            document.querySelectorAll('.translation-input').forEach(textarea => {
+            this.toolContainer.querySelectorAll('.translation-input').forEach(textarea => {
                 const index = textarea.getAttribute('data-id');
                 if (savedTranslations[index]) {
                     textarea.value = savedTranslations[index];
                     textarea.dispatchEvent(new Event('input', { bubbles: true }));
                 }
             });
-            autoSaveStatus.textContent = 'Loaded auto-saved session.';
+            this.elements.autoSaveStatus.textContent = 'Loaded auto-saved session.';
         }
-    }
+    },
 
-    function saveTranslatedFile() {
-        const newSrtContent = subtitles.map((sub, i) => {
-            const textarea = document.querySelector(`.translation-input[data-id="${i}"]`);
+    saveTranslatedFile: function() {
+        const newSrtContent = this.subtitles.map((sub, i) => {
+            const textarea = this.toolContainer.querySelector(`.translation-input[data-id="${i}"]`);
             const translatedText = textarea.value.trim() || sub.text;
             return `${sub.index}\n${sub.startTime} --> ${sub.endTime}\n${translatedText}`;
         }).join('\n\n') + '\n\n';
@@ -350,26 +371,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = originalFileName;
+        a.download = this.originalFileName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         if (confirm("Download started. Would you like to clear the auto-saved data?")) {
-            localStorage.removeItem(getAutoSaveKey());
-            autoSaveStatus.textContent = 'Auto-save cleared.';
+            localStorage.removeItem(this.getAutoSaveKey());
+            this.elements.autoSaveStatus.textContent = 'Auto-save cleared.';
         }
-    }
+    },
 
     // --- Time Conversion Helpers ---
     
-    function timeToMilliseconds(timeStr) {
+    timeToMilliseconds: function(timeStr) {
         const parts = timeStr.match(/(\d{2}):(\d{2}):(\d{2}),(\d{3})/);
         if (!parts) return 0;
         return parseInt(parts[1]) * 3600000 + parseInt(parts[2]) * 60000 + parseInt(parts[3]) * 1000 + parseInt(parts[4]);
-    }
+    },
 
-    function millisecondsToTime(ms) {
+    millisecondsToTime: function(ms) {
         if (ms < 0) ms = 0;
         const h = Math.floor(ms / 3600000); ms %= 3600000;
         const m = Math.floor(ms / 60000); ms %= 60000;
@@ -377,5 +398,4 @@ document.addEventListener('DOMContentLoaded', () => {
         const msec = ms % 1000;
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(msec).padStart(3, '0')}`;
     }
-   });
-})();
+};
