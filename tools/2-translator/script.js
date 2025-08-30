@@ -1,3 +1,4 @@
+(function() {
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const fileInput = document.getElementById('fileInput');
@@ -376,4 +377,5 @@ document.addEventListener('DOMContentLoaded', () => {
         const msec = ms % 1000;
         return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(msec).padStart(3, '0')}`;
     }
-});
+   });
+})();
