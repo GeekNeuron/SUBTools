@@ -1,180 +1,204 @@
-(function() {
-document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
-    const videoInput = document.getElementById('video-input');
-    const statusText = document.getElementById('status-text');
-    const progressBar = document.getElementById('progress-bar');
-    const tracksContainer = document.getElementById('tracks-container');
-    const tracksList = document.getElementById('tracks-list');
-    const extractBtn = document.getElementById('extract-btn');
-    const outputFormatSelect = document.getElementById('output-format');
-    const previewBox = document.getElementById('preview-box');
-    const previewContent = document.getElementById('preview-content');
+// Create a namespace for our tools to avoid global scope conflicts
+window.SubTools = window.SubTools || {};
 
-    // FFmpeg setup
-    const { createFFmpeg, fetchFile } = FFmpeg;
-    const ffmpeg = createFFmpeg({
-        log: true,
-        corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
-    });
+// Define the module for the Video Subtitle Extractor tool
+window.SubTools.extractor = {
+    // Module-level properties
+    toolContainer: null,
+    elements: {},
+    ffmpeg: null,
+    videoFile: null,
+    subtitleTracks: [],
 
-    let videoFile = null;
-    let subtitleTracks = [];
-
-    // --- Event Listeners ---
-    videoInput.addEventListener('change', handleFileSelect);
-    extractBtn.addEventListener('click', handleExtract);
-
-    async function handleFileSelect(event) {
-        videoFile = event.target.files[0];
-        if (!videoFile) return;
-        
-        resetUI();
-        statusText.textContent = 'Preparing to scan... please wait.';
-
-        if (!ffmpeg.isLoaded()) {
-            await loadFFmpeg();
+    // The init method is called by the main hub script to start the tool
+    init: function(containerId) {
+        this.toolContainer = document.getElementById(containerId);
+        if (!this.toolContainer) {
+            console.error(`Container with id "${containerId}" not found for Extractor tool.`);
+            return;
         }
+
+        // Scope all element queries to the tool's container
+        this.elements = {
+            videoInput: this.toolContainer.querySelector('#video-input'),
+            statusText: this.toolContainer.querySelector('#status-text'),
+            progressBar: this.toolContainer.querySelector('#progress-bar'),
+            tracksContainer: this.toolContainer.querySelector('#tracks-container'),
+            tracksList: this.toolContainer.querySelector('#tracks-list'),
+            extractBtn: this.toolContainer.querySelector('#extract-btn'),
+            outputFormatSelect: this.toolContainer.querySelector('#output-format'),
+            previewBox: this.toolContainer.querySelector('#preview-box'),
+            previewContent: this.toolContainer.querySelector('#preview-content')
+        };
         
-        await scanForSubtitles();
-    }
+        // Initialize FFmpeg instance
+        const { createFFmpeg, fetchFile } = FFmpeg;
+        this.ffmpeg = createFFmpeg({
+            log: true,
+            corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+        });
+        
+        // Bind event listeners
+        this.elements.videoInput.addEventListener('change', this.handleFileSelect.bind(this));
+        this.elements.extractBtn.addEventListener('click', this.handleExtract.bind(this));
+        
+        console.log('Extractor tool initialized.');
+    },
+
+    // The destroy method is called when switching to another tool
+    destroy: function() {
+        // Reset state and UI
+        this.videoFile = null;
+        this.subtitleTracks = [];
+        this.resetUI();
+        this.elements.videoInput.value = ''; // Clear file input
+        // In a more complex app, you might terminate running ffmpeg processes if possible
+        console.log('Extractor tool destroyed.');
+    },
     
     // --- Core FFmpeg Functions ---
 
-    async function loadFFmpeg() {
-        statusText.textContent = 'Loading video processing engine (ffmpeg)... This may take a moment.';
-        progressBar.classList.remove('hidden');
-        ffmpeg.setProgress(({ ratio }) => {
-            progressBar.value = ratio * 100;
+    handleFileSelect: async function(event) {
+        this.videoFile = event.target.files[0];
+        if (!this.videoFile) return;
+        
+        this.resetUI();
+        this.elements.statusText.textContent = 'Preparing to scan... please wait.';
+
+        if (!this.ffmpeg.isLoaded()) {
+            await this.loadFFmpeg();
+        }
+        
+        await this.scanForSubtitles();
+    },
+
+    loadFFmpeg: async function() {
+        this.elements.statusText.textContent = 'Loading video processing engine (ffmpeg)... This may take a moment.';
+        this.elements.progressBar.classList.remove('hidden');
+        this.ffmpeg.setProgress(({ ratio }) => {
+            this.elements.progressBar.value = ratio * 100;
         });
-        await ffmpeg.load();
-        progressBar.classList.add('hidden');
-    }
+        await this.ffmpeg.load();
+        this.elements.progressBar.classList.add('hidden');
+    },
 
-    async function scanForSubtitles() {
-        subtitleTracks = [];
-        statusText.textContent = 'Writing file to virtual memory...';
-        ffmpeg.FS('writeFile', videoFile.name, await fetchFile(videoFile));
+    scanForSubtitles: async function() {
+        this.subtitleTracks = [];
+        this.elements.statusText.textContent = 'Writing file to virtual memory...';
+        this.ffmpeg.FS('writeFile', this.videoFile.name, await FFmpeg.fetchFile(this.videoFile));
 
-        statusText.textContent = 'Scanning for subtitle tracks...';
+        this.elements.statusText.textContent = 'Scanning for subtitle tracks...';
         
         let commandOutput = "";
-        ffmpeg.setLogger(({ type, message }) => { if (type === 'fferr') commandOutput += message + '\n'; });
+        this.ffmpeg.setLogger(({ type, message }) => { if (type === 'fferr') commandOutput += message + '\n'; });
 
         try {
-            // This command is expected to fail. The error output contains the file info.
-            await ffmpeg.run('-i', videoFile.name);
-        } catch (e) {
-            // We parse the output from the expected error
-        } finally {
-            parseFFmpegOutput(commandOutput);
-            displayTracks();
-            ffmpeg.setLogger(() => {}); // Reset logger
+            await this.ffmpeg.run('-i', this.videoFile.name);
+        } catch (e) { /* This error is expected; the output contains the stream info */ }
+        finally {
+            this.parseFFmpegOutput(commandOutput);
+            this.displayTracks();
+            this.ffmpeg.setLogger(() => {}); // Reset logger
         }
-    }
+    },
     
-    async function handleExtract() {
-        const selectedTracks = Array.from(document.querySelectorAll('input[name="subtitle-track"]:checked'));
+    handleExtract: async function() {
+        const selectedTracks = Array.from(this.toolContainer.querySelectorAll('input[name="subtitle-track"]:checked'));
         if (selectedTracks.length === 0) {
             alert('Please select at least one subtitle track to extract.');
             return;
         }
 
-        statusText.textContent = `Preparing to extract ${selectedTracks.length} track(s)...`;
-        progressBar.classList.remove('hidden');
+        this.elements.statusText.textContent = `Preparing to extract ${selectedTracks.length} track(s)...`;
+        this.elements.progressBar.classList.remove('hidden');
 
         try {
             const filesToDownload = [];
             for (const trackInput of selectedTracks) {
                 const trackIndex = trackInput.value;
                 const originalFormat = trackInput.dataset.format;
-                const outputFormat = outputFormatSelect.value;
-                
-                // 1. Extract the raw track file
+                const outputFormat = this.elements.outputFormatSelect.value;
+
                 const tempFilename = `output.${originalFormat}`;
-                await ffmpeg.run('-i', videoFile.name, '-map', `0:${trackIndex}`, '-c', 'copy', tempFilename);
-                const data = ffmpeg.FS('readFile', tempFilename);
-                ffmpeg.FS('unlink', tempFilename); // Clean up virtual file
+                await this.ffmpeg.run('-i', this.videoFile.name, '-map', `0:${trackIndex}`, '-c', 'copy', tempFilename);
+                const data = this.ffmpeg.FS('readFile', tempFilename);
+                this.ffmpeg.FS('unlink', tempFilename);
 
                 const fileContentStr = new TextDecoder().decode(data);
                 
-                // 2. Convert if a different format is requested
                 let finalContent = fileContentStr;
                 let finalFormat = outputFormat === 'original' ? originalFormat : outputFormat;
 
                 if (outputFormat !== 'original' && outputFormat !== originalFormat) {
-                    const parsedSubs = parseSubtitle(fileContentStr, originalFormat);
-                    finalContent = buildSubtitle(parsedSubs, outputFormat);
+                    const parsedSubs = this.parseSubtitle(fileContentStr, originalFormat);
+                    finalContent = this.buildSubtitle(parsedSubs, outputFormat);
                 }
                 
-                const finalFileName = `${videoFile.name.split('.').slice(0, -1).join('.')}_${trackIndex}.${finalFormat}`;
+                const finalFileName = `${this.videoFile.name.split('.').slice(0, -1).join('.')}_${trackIndex}.${finalFormat}`;
                 filesToDownload.push({ name: finalFileName, content: finalContent });
             }
 
-            // 3. Download as single file or ZIP
             if (filesToDownload.length === 1) {
-                triggerDownload(filesToDownload[0].content, filesToDownload[0].name);
+                this.triggerDownload(filesToDownload[0].content, filesToDownload[0].name);
             } else {
                 const zip = new JSZip();
                 filesToDownload.forEach(file => zip.file(file.name, file.content));
                 const zipBlob = await zip.generateAsync({ type: "blob" });
-                triggerDownload(zipBlob, 'subtitles.zip');
+                this.triggerDownload(zipBlob, 'subtitles.zip');
             }
-            statusText.textContent = `${filesToDownload.length} track(s) extracted successfully.`;
+            this.elements.statusText.textContent = `${filesToDownload.length} track(s) extracted successfully.`;
 
         } catch(e) {
-            statusText.textContent = 'An error occurred during extraction.';
+            this.elements.statusText.textContent = 'An error occurred during extraction.';
             console.error(e);
         } finally {
-            progressBar.classList.add('hidden');
+            this.elements.progressBar.classList.add('hidden');
         }
-    }
+    },
 
-    async function handlePreview(trackIndex, trackFormat) {
-        statusText.textContent = `Generating preview for track ${trackIndex}...`;
-        previewBox.classList.remove('hidden');
-        previewContent.textContent = 'Processing...';
+    handlePreview: async function(trackIndex, trackFormat) {
+        this.elements.statusText.textContent = `Generating preview for track ${trackIndex}...`;
+        this.elements.previewBox.classList.remove('hidden');
+        this.elements.previewContent.textContent = 'Processing...';
         
         try {
             const tempFilename = `preview.${trackFormat}`;
-            await ffmpeg.run('-i', videoFile.name, '-map', `0:${trackIndex}`, '-c', 'copy', tempFilename);
-            const data = ffmpeg.FS('readFile', tempFilename);
-            ffmpeg.FS('unlink', tempFilename);
+            await this.ffmpeg.run('-i', this.videoFile.name, '-map', `0:${trackIndex}`, '-c', 'copy', tempFilename);
+            const data = this.ffmpeg.FS('readFile', tempFilename);
+            this.ffmpeg.FS('unlink', tempFilename);
 
             const fileContentStr = new TextDecoder().decode(data);
-            const parsedSubs = parseSubtitle(fileContentStr, trackFormat);
-
+            const parsedSubs = this.parseSubtitle(fileContentStr, trackFormat);
             const previewText = parsedSubs.slice(0, 5).map(sub => sub.text).join('\n---\n');
-            previewContent.textContent = previewText || '(No text content found for preview)';
-            statusText.textContent = 'Preview is ready.';
+            this.elements.previewContent.textContent = previewText || '(No text content found for preview)';
+            this.elements.statusText.textContent = 'Preview is ready.';
         } catch (e) {
-            previewContent.textContent = 'Error generating preview.';
+            this.elements.previewContent.textContent = 'Error generating preview.';
             console.error(e);
         }
-    }
+    },
 
     // --- UI and Helper Functions ---
     
-    function parseFFmpegOutput(output) {
+    parseFFmpegOutput: function(output) {
         const streamRegex = /Stream #0:(\d+).*?Subtitle: (\w+)(?:.*?Language: (\w+))?/g;
         let match;
         while ((match = streamRegex.exec(output)) !== null) {
             let format = match[2].toLowerCase();
-            if (format === 'subrip') format = 'srt'; // Standardize format names
-            
-            subtitleTracks.push({
+            if (format === 'subrip') format = 'srt';
+            this.subtitleTracks.push({
                 index: match[1],
                 format: format,
                 language: match[3] || 'Unknown'
             });
         }
-    }
+    },
 
-    function displayTracks() {
-        if (subtitleTracks.length > 0) {
-            statusText.textContent = `${subtitleTracks.length} subtitle track(s) found. Please make a selection.`;
-            tracksList.innerHTML = '';
-            subtitleTracks.forEach(track => {
+    displayTracks: function() {
+        if (this.subtitleTracks.length > 0) {
+            this.elements.statusText.textContent = `${this.subtitleTracks.length} subtitle track(s) found. Please make a selection.`;
+            this.elements.tracksList.innerHTML = '';
+            this.subtitleTracks.forEach(track => {
                 const div = document.createElement('div');
                 div.className = 'track-item';
                 div.innerHTML = `
@@ -184,44 +208,45 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <button class="preview-btn" data-index="${track.index}" data-format="${track.format}">Preview</button>
                 `;
-                tracksList.appendChild(div);
+                this.elements.tracksList.appendChild(div);
             });
-            document.querySelectorAll('.preview-btn').forEach(btn => {
+            this.toolContainer.querySelectorAll('.preview-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    handlePreview(e.target.dataset.index, e.target.dataset.format);
+                    this.handlePreview(e.target.dataset.index, e.target.dataset.format);
                 });
             });
-            tracksContainer.classList.remove('hidden');
-            extractBtn.disabled = false;
+            this.elements.tracksContainer.classList.remove('hidden');
+            this.elements.extractBtn.disabled = false;
         } else {
-            statusText.textContent = 'No embedded subtitle tracks were found in this video.';
+            this.elements.statusText.textContent = 'No embedded subtitle tracks were found in this video.';
         }
-    }
+    },
     
-    function resetUI() {
-        tracksContainer.classList.add('hidden');
-        previewBox.classList.add('hidden');
-        tracksList.innerHTML = '';
-        extractBtn.disabled = true;
-        progressBar.classList.add('hidden');
-    }
-    
+    resetUI: function() {
+        this.elements.tracksContainer.classList.add('hidden');
+        this.elements.previewBox.classList.add('hidden');
+        this.elements.tracksList.innerHTML = '';
+        this.elements.extractBtn.disabled = true;
+        this.elements.progressBar.classList.add('hidden');
+        this.elements.statusText.textContent = 'Select a video file (MKV, MP4) to begin.';
+    },
+
     // --- Parser & Builder Functions ---
 
-    function parseSubtitle(content, format) {
-        if (format === 'srt') return parseSrt(content);
-        if (format === 'vtt') return parseVtt(content);
-        if (format === 'ass') return parseAss(content);
+    parseSubtitle: function(content, format) {
+        if (format === 'srt') return this.parseSrt(content);
+        if (format === 'vtt') return this.parseVtt(content);
+        if (format === 'ass') return this.parseAss(content);
         throw new Error(`Parsing for format "${format}" is not supported.`);
-    }
+    },
 
-    function buildSubtitle(subtitles, format) {
-        if (format === 'srt') return buildSrt(subtitles);
-        if (format === 'vtt') return buildVtt(subtitles);
+    buildSubtitle: function(subtitles, format) {
+        if (format === 'srt') return this.buildSrt(subtitles);
+        if (format === 'vtt') return this.buildVtt(subtitles);
         throw new Error(`Building format "${format}" is not supported.`);
-    }
+    },
 
-    function parseSrt(data) {
+    parseSrt: function(data) {
         return data.trim().replace(/\r/g, '').split('\n\n').map(block => {
             const lines = block.split('\n');
             if (lines.length >= 2 && lines[1]?.includes('-->')) {
@@ -230,9 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return null;
         }).filter(Boolean);
-    }
+    },
 
-    function parseVtt(data) {
+    parseVtt: function(data) {
         const blocks = data.trim().replace(/\r/g, '').split('\n\n');
         const startIndex = blocks[0].toUpperCase().startsWith('WEBVTT') ? 1 : 0;
         return blocks.slice(startIndex).map(block => {
@@ -244,9 +269,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return null;
         }).filter(Boolean);
-    }
+    },
     
-    function parseAss(data) {
+    parseAss: function(data) {
         const subs = [];
         const lines = data.trim().split(/\r?\n/);
         const eventLines = lines.filter(line => line.startsWith('Dialogue:'));
@@ -255,35 +280,35 @@ document.addEventListener('DOMContentLoaded', () => {
             if (parts.length >= 10) {
                 const text = parts.slice(9).join(',').replace(/{.*?}/g, '').replace(/\\N/g, '\n');
                 subs.push({
-                    startTime: formatAssTime(parts[1]),
-                    endTime: formatAssTime(parts[2]),
+                    startTime: this.formatAssTime(parts[1]),
+                    endTime: this.formatAssTime(parts[2]),
                     text: text
                 });
             }
         }
         return subs;
-    }
+    },
 
-    function buildSrt(subtitles) {
+    buildSrt: function(subtitles) {
         return subtitles.map((sub, index) => {
             const startTime = sub.startTime.replace('.', ',');
             const endTime = sub.endTime.replace('.', ',');
             return `${index + 1}\n${startTime} --> ${endTime}\n${sub.text}`;
         }).join('\n\n') + '\n\n';
-    }
+    },
     
-    function buildVtt(subtitles) {
+    buildVtt: function(subtitles) {
         const content = subtitles.map(sub => `${sub.startTime} --> ${sub.endTime}\n${sub.text}`).join('\n\n');
         return "WEBVTT\n\n" + content + '\n\n';
-    }
+    },
 
-    function formatAssTime(time) { // Converts H:MM:SS.ss to HH:MM:SS.sss
+    formatAssTime: function(time) { // Converts H:MM:SS.ss to HH:MM:SS.sss
         const [h, m, s_cs] = time.split(':');
         const [s, cs] = s_cs.split('.');
         return `${h.padStart(2, '0')}:${m.padStart(2, '0')}:${s.padStart(2, '0')}.${(cs || '0').padEnd(3, '0')}`;
-    }
+    },
     
-    function triggerDownload(content, fileName) {
+    triggerDownload: function(content, fileName) {
         const blob = (typeof content === 'string') ? new Blob([content], { type: 'text/plain;charset=utf-8' }) : content;
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -295,5 +320,4 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
         a.remove();
     }
-   });
-})();
+};
