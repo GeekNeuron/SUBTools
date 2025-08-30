@@ -1,3 +1,4 @@
+(function() {
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Element References
     const fileInput = document.getElementById('fileInput');
@@ -243,4 +244,5 @@ document.addEventListener('DOMContentLoaded', () => {
             return null;
         }).filter(Boolean); // Filter out any null (invalid) blocks
     }
-});
+   });
+})();
