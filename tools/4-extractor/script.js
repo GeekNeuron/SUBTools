@@ -35,7 +35,7 @@ window.SubTools.extractor = {
         const { createFFmpeg, fetchFile } = FFmpeg;
         this.ffmpeg = createFFmpeg({
             log: true,
-            corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+            corePath: 'assets/ffmpeg/ffmpeg-core.js',
         });
         
         // Bind event listeners
