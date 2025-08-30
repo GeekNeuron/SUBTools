@@ -42,7 +42,7 @@ header p {
     font-size: 1.1rem;
 }
 
-.card {
+#coordinator-tool .card {
     background: var(--white-bg);
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
