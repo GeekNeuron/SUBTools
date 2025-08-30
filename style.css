@@ -8,10 +8,11 @@
     --nav-active-bg: var(--card-background);
     --footer-bg: #f8f9fa;
     --border-radius: 8px;
+    --font-family: 'Vazirmatn', sans-serif;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font-family);
     background-color: var(--background-color);
     color: var(--text-color);
     margin: 0;
