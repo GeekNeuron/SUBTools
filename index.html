@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sub Tools - A Collection of Subtitle Utilities</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="tools/1-coordinator/style.css">
+    <link rel="stylesheet" href="tools/2-translator/style.css">
+    <link rel="stylesheet" href="tools/3-converter/style.css">
+    <link rel="stylesheet" href="tools/4-extractor/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>Sub Tools 🛠️</h1>
+            <p>A complete collection of online utilities for working with subtitles.</p>
+        </header>
+        
+        <nav class="app-nav">
+            <a href="#" class="nav-link active" data-tool="coordinator-tool">Timeline Coordinator</a>
+            <a href="#" class="nav-link" data-tool="translator-tool">Subtitle Translator</a>
+            <a href="#" class="nav-link" data-tool="converter-tool">Format Converter</a>
+            <a href="#" class="nav-link" data-tool="extractor-tool">Video Extractor</a>
+        </nav>
+
+        <main class="app-main">
+            <div id="coordinator-tool" class="tool-content active">
+                </div>
+            <div id="translator-tool" class="tool-content">
+                </div>
+            <div id="converter-tool" class="tool-content">
+                </div>
+            <div id="extractor-tool" class="tool-content">
+                </div>
+        </main>
+    </div>
+
+    <footer class="app-footer">
+        Created with ❤️ by GeekNeuron
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="tools/1-coordinator/script.js"></script>
+    <script src="tools/2-translator/script.js"></script>
+    <script src="tools/3-converter/script.js"></script>
+    <script src="tools/4-extractor/coi-serviceworker.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="tools/4-extractor/script.js"></script>
+</body>
+</html>
