@@ -1,3 +1,4 @@
+(function() {
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const videoInput = document.getElementById('video-input');
@@ -294,4 +295,5 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
         a.remove();
     }
-});
+   });
+})();
