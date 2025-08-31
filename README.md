@@ -52,27 +52,14 @@ An advanced tool that pulls embedded (soft) subtitle tracks directly from video 
 * **On-the-Fly Conversion:** Extract a track in one format (e.g., ASS) and save it directly as another (e.g., SRT).
 * **Batch Extraction & Previews:** Select and extract multiple tracks at once, and preview their content before downloading.
 
----
-
-## 📂 Project Structure
-
-The repository is organized to keep each tool's code modular and maintainable.
-
-```
-Sub-Tools/
-├── index.html         # The main hub page that hosts all tools
-├── style.css          # Main CSS for the hub layout and navigation
-├── script.js          # Main JS for hub navigation (tab switching)
-│
-└─── tools/            # Folder containing the assets for each tool
-    ├── 1-coordinator/
-    ├── 2-translator/
-    ├── 3-converter/
-    └── 4-extractor/
-        └── coi-serviceworker.js # Special file for the extractor
-```
+#### 5. Subtitle Health Checker
+A diagnostic utility to automatically find and fix common errors in .srt files, ensuring professional quality.
+Comprehensive Error Detection: Finds issues like timing overlaps, invalid syntax, long lines, and high reading speeds (CPS).
+One-Click Repairs & Cleanup: Automatically fixes common timing issues and removes unwanted hearing-impaired (HI) or styling tags.
+Encoding Correction: Instantly fixes unreadable "gibberish" text by re-reading files with the correct Farsi/Arabic encoding.
 
 ---
+
 
 ## 📄 License
 
