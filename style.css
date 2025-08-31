@@ -100,3 +100,39 @@ body { font-family: var(--font-family); background-color: var(--background-color
 #extractor-tool #extractor-extract-btn:disabled { background-color: #8fdfa3; cursor: not-allowed; }
 #extractor-tool .preview-box { margin-top: 15px; background: #2d333b; color: #cdd9e5; padding: 15px; border-radius: var(--border-radius); }
 #extractor-tool #extractor-preview-content { white-space: pre-wrap; font-family: monospace; max-height: 150px; overflow-y: auto; }
+
+/* 5. HEALTH CHECKER STYLES */
+#checker-tool .checker-container { max-width: 900px; margin: 0 auto; }
+#checker-tool .card { padding: 25px; margin-bottom: 20px; border: 1px solid #e9ecef; border-radius: var(--border-radius); }
+#checker-tool #upload-card { text-align: center; }
+#checker-tool .file-upload-label { display: inline-block; padding: 12px 25px; background-color: var(--info-color); color: white; border-radius: 5px; cursor: pointer; font-size: 1.1rem; }
+#checker-tool #encoding-fixer { margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 5px; }
+#checker-tool .summary-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e0e0e0; }
+#checker-tool .summary-header { flex-grow: 1; }
+#checker-tool #checker-summary-stats { display: flex; flex-wrap: wrap; gap: 10px; font-weight: 500; margin-top: 10px;}
+#checker-tool #checker-summary-stats span { padding: 5px 10px; border-radius: 15px; color: white; font-size: 0.9rem; }
+#checker-tool .stat-danger { background-color: var(--danger-color); }
+#checker-tool .stat-warning { background-color: var(--warning-color); color: #212529 !important; }
+#checker-tool .stat-info { background-color: var(--info-color); }
+#checker-tool .stat-success { background-color: var(--success-color); }
+#checker-tool .action-buttons { display: flex; gap: 10px; }
+#checker-tool .action-btn { padding: 8px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; }
+#checker-tool .fix-btn { background-color: var(--success-color); }
+#checker-tool .clean-btn { background-color: var(--info-color); }
+#checker-tool #checker-subtitle-list { max-height: 500px; overflow-y: auto; }
+#checker-tool .subtitle-item { border: 1px solid #e0e0e0; border-left: 5px solid transparent; border-radius: 5px; padding: 10px; margin-bottom: 10px; }
+#checker-tool .subtitle-header { display: flex; justify-content: space-between; font-family: monospace; font-size: 0.9rem; color: #6c757d; margin-bottom: 8px; }
+#checker-tool .subtitle-text, #checker-tool .raw-block { line-height: 1.6; white-space: pre-wrap; font-family: monospace; }
+#checker-tool .raw-block { background-color: #ffeef0; padding: 10px; border-radius: 4px; }
+#checker-tool .issues { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; font-size: 0.8rem; }
+#checker-tool .issue-tag { padding: 2px 8px; border-radius: 10px; color: white; }
+#checker-tool .issue-tag-danger { background-color: var(--danger-color); }
+#checker-tool .issue-tag-warning { background-color: var(--warning-color); color: #212529; }
+#checker-tool .issue-tag-info { background-color: var(--info-color); }
+#checker-tool .issue-syntax { border-left-color: var(--danger-color); }
+#checker-tool .issue-overlap, #checker-tool .issue-short-duration { border-left-color: var(--danger-color); }
+#checker-tool .issue-long-duration, #checker-tool .issue-cpl, #checker-tool .issue-cps { border-left-color: var(--warning-color); }
+#checker-tool .issue-formatting { border-left-color: var(--info-color); }
+#checker-tool .save-section { margin-top: 20px; text-align: center; border-top: 1px solid #e0e0e0; padding-top: 20px; }
+#checker-tool .save-section select { padding: 8px; border-radius: 4px; margin-right: 10px; }
+#checker-tool .save-section button { padding: 12px 25px; background: var(--primary-color); color: white; border: none; border-radius: 5px; font-size: 1.1rem; }
