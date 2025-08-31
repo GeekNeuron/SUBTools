@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sub Tools - A Collection of Subtitle Utilities</title>
+    
     <link rel="stylesheet" href="style.css">
+    
     <link rel="stylesheet" href="tools/1-coordinator/style.css">
     <link rel="stylesheet" href="tools/2-translator/style.css">
     <link rel="stylesheet" href="tools/3-converter/style.css">
     <link rel="stylesheet" href="tools/4-extractor/style.css">
+    
     <script src="tools/4-extractor/coi-serviceworker.js"></script>
 </head>
 <body>
@@ -17,26 +20,32 @@
             <h1>Sub Tools 🛠️</h1>
             <p>A complete collection of online utilities for working with subtitles.</p>
         </header>
+        
         <nav class="app-nav">
             <a href="#" class="nav-link active" data-tool="coordinator">Timeline Coordinator</a>
             <a href="#" class="nav-link" data-tool="translator">Subtitle Translator</a>
             <a href="#" class="nav-link" data-tool="converter">Format Converter</a>
             <a href="#" class="nav-link" data-tool="extractor">Video Extractor</a>
         </nav>
+
         <main class="app-main">
             <div id="coordinator-tool" class="tool-content">
                 <div class="container">
                     <header><h1>SRT Subtitle Timeline Coordinator</h1><p>Upload your SRT file and easily edit its timeline.</p></header>
-                    <div class="controls"><input type="file" id="coordinator-fileInput" accept=".srt"><label for="coordinator-fileInput" class="custom-file-upload">Choose SRT File</label><button id="coordinator-saveButton" disabled>Save Changes</button></div>
-                    <div class="timeline-shifter"><h3>Global/Selected Timeline Shift</h3><p>Adjusts all subtitles or only the selected ones.</p><div class="shift-controls"><input type="number" id="coordinator-shiftHours" placeholder="HH" min="0"><input type="number" id="coordinator-shiftMinutes" placeholder="MM" min="0" max="59"><input type="number" id="coordinator-shiftSeconds" placeholder="SS" min="0" max="59"><input type="number" id="coordinator-shiftMilliseconds" placeholder="ms" min="0" max="999"><button id="coordinator-shiftForwardButton">Shift Forward (+)</button><button id="coordinator-shiftBackwardButton">Shift Backward (-)</button></div></div>
-                    <div class="subtitle-list-header"><div class="select-all-container"><input type="checkbox" id="coordinator-selectAllCheckbox"><label for="coordinator-selectAllCheckbox">Select All</label></div></div>
-                    <div id="coordinator-subtitle-container"></div>
+                    <div class="card" id="editor-card">
+                        <div class="controls"><input type="file" id="fileInput"><label for="fileInput" class="custom-file-upload">Choose SRT File</label><span id="file-name">No file selected.</span></div>
+                        <div class="timeline-shifter"><h3>Global/Selected Timeline Shift</h3><p>Adjusts all subtitles or only the selected ones.</p><div class="shift-controls"><input type="number" id="shiftHours" placeholder="HH"><input type="number" id="shiftMinutes" placeholder="MM"><input type="number" id="shiftSeconds" placeholder="SS"><input type="number" id="shiftMilliseconds" placeholder="ms"></div><div class="shift-buttons"><button id="shiftForwardButton">Shift Forward (+)</button><button id="shiftBackwardButton">Shift Backward (-)</button></div></div>
+                        <div class="subtitle-list-header"><div class="select-all-container"><input type="checkbox" id="selectAllCheckbox"><label for="selectAllCheckbox">Select All</label></div></div>
+                        <div id="subtitle-container"></div>
+                    </div>
+                    <div class="card" id="save-card"><button id="saveButton">Save Changes</button></div>
                 </div>
             </div>
+            
             <div id="translator-tool" class="tool-content">
                 <div class="container">
                     <header><h1>SRT Subtitle Translator</h1><p>A complete tool with translation, editing, and line management features.</p></header>
-                    <div class="card"><div class="controls"><input type="file" id="translator-fileInput" accept=".srt"><label for="translator-fileInput" class="custom-file-upload">Choose SRT File</label><span id="translator-file-name">No file selected</span></div></div>
+                    <div class="card"><div class="controls"><input type="file" id="translator-fileInput"><label for="translator-fileInput" class="custom-file-upload">Choose SRT File</label><span id="translator-file-name">No file selected</span></div></div>
                     <div class="card hidden" id="translator-editor-card">
                         <div class="card-header"><h2>Translation Editor</h2><span class="autosave-status" id="translator-autosave-status"></span></div>
                         <div class="editor-actions"><button id="translator-add-line-btn">Add New Line</button><button id="translator-delete-lines-btn">Delete Selected</button></div>
@@ -46,6 +55,7 @@
                     </div>
                 </div>
             </div>
+
             <div id="converter-tool" class="tool-content">
                 <div class="card">
                     <header><h1>Professional Subtitle Converter</h1><p>Drag & drop files or select them to convert.</p></header>
@@ -55,8 +65,9 @@
                     </main>
                 </div>
             </div>
+
             <div id="extractor-tool" class="tool-content">
-                <div class="card">
+                 <div class="card">
                     <header><h1>Professional Subtitle Extractor</h1><p>Extract multiple tracks and select the output format.</p></header>
                     <main>
                         <div class="upload-area"><input type="file" id="extractor-video-input" accept="video/*"><label for="extractor-video-input" class="file-label"><span>Select Video File</span></label></div>
@@ -72,7 +83,11 @@
             </div>
         </main>
     </div>
-    <footer class="app-footer">Created with ❤️ by GeekNeuron</footer>
+
+    <footer class="app-footer">
+        Created with ❤️ by GeekNeuron
+    </footer>
+
     <script src="script.js"></script>
     <script src="tools/1-coordinator/script.js"></script>
     <script src="tools/2-translator/script.js"></script>
