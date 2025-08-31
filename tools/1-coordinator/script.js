@@ -1,13 +1,11 @@
-// Create a namespace for our tools to avoid global scope conflicts
 window.SubTools = window.SubTools || {};
 
 // Define the module for the Timeline Coordinator tool
 window.SubTools.coordinator = {
-    // Store module-level variables
+    // Module-level properties
     toolContainer: null,
     subtitles: [],
     originalFileName: 'edited.srt',
-    totalDurationMs: 0,
     elements: {}, // An object to hold DOM element references
     keyboardHandler: null, // To hold the reference to the bound keyboard handler
 
@@ -19,24 +17,21 @@ window.SubTools.coordinator = {
             return;
         }
 
-        // Scope all element queries to the tool's container
-        // This prevents conflicts with identical IDs in other tools
+        // Scope all element queries to the tool's container using unique IDs
         this.elements = {
-            fileInput: this.toolContainer.querySelector('#fileInput'),
-            fileNameSpan: this.toolContainer.querySelector('#file-name'),
-            saveButton: this.toolContainer.querySelector('#saveButton'),
-            subtitleContainer: this.toolContainer.querySelector('#subtitle-container'),
-            selectAllCheckbox: this.toolContainer.querySelector('#selectAllCheckbox'),
+            fileInput: this.toolContainer.querySelector('#coordinator-fileInput'),
+            fileNameSpan: this.toolContainer.querySelector('#coordinator-file-name'),
+            saveButton: this.toolContainer.querySelector('#coordinator-saveButton'),
+            subtitleContainer: this.toolContainer.querySelector('#coordinator-subtitle-container'),
+            selectAllCheckbox: this.toolContainer.querySelector('#coordinator-selectAllCheckbox'),
             shiftInputs: {
-                h: this.toolContainer.querySelector('#shiftHours'),
-                m: this.toolContainer.querySelector('#shiftMinutes'),
-                s: this.toolContainer.querySelector('#shiftSeconds'),
-                ms: this.toolContainer.querySelector('#shiftMilliseconds')
+                h: this.toolContainer.querySelector('#coordinator-shiftHours'),
+                m: this.toolContainer.querySelector('#coordinator-shiftMinutes'),
+                s: this.toolContainer.querySelector('#coordinator-shiftSeconds'),
+                ms: this.toolContainer.querySelector('#coordinator-shiftMilliseconds')
             },
-            shiftForwardButton: this.toolContainer.querySelector('#shiftForwardButton'),
-            shiftBackwardButton: this.toolContainer.querySelector('#shiftBackwardButton'),
-            editorCard: this.toolContainer.querySelector('#editor-card'),
-            saveCard: this.toolContainer.querySelector('#save-card')
+            shiftForwardButton: this.toolContainer.querySelector('#coordinator-shiftForwardButton'),
+            shiftBackwardButton: this.toolContainer.querySelector('#coordinator-shiftBackwardButton'),
         };
         
         // Bind event listeners
@@ -73,13 +68,12 @@ window.SubTools.coordinator = {
         }
         this.originalFileName = file.name.replace('.srt', '_edited.srt');
         this.elements.fileNameSpan.textContent = file.name;
+        this.elements.saveButton.disabled = true; // Disable until processed
         const reader = new FileReader();
         reader.onload = (e) => {
             this.subtitles = this.parseSrt(e.target.result);
             if (this.subtitles.length > 0) {
-                this.totalDurationMs = this.timeToMilliseconds(this.subtitles[this.subtitles.length - 1].endTime);
-                this.elements.editorCard.classList.remove('hidden');
-                this.elements.saveCard.classList.remove('hidden');
+                this.elements.saveButton.disabled = false;
                 this.renderSubtitles();
             } else {
                 alert('Could not parse the SRT file. It might be empty or invalid.');
@@ -95,30 +89,13 @@ window.SubTools.coordinator = {
             item.className = 'subtitle-item';
             if (sub.selected) item.classList.add('selected');
 
-            const durationSec = (this.timeToMilliseconds(sub.endTime) - this.timeToMilliseconds(sub.startTime)) / 1000;
-            const cps = durationSec > 0 ? (sub.text.length / durationSec) : 0;
-            const CPS_THRESHOLD = 20;
-            let cpsWarningHTML = '';
-            if (cps > CPS_THRESHOLD) {
-                item.classList.add('has-warning');
-                cpsWarningHTML = `<div class="cps-warning" title="High Characters Per Second">!
-                    <span class="tooltip">CPS: ${cps.toFixed(1)}. Reading may be too fast.</span></div>`;
-            }
-
-            const startPercent = (this.timeToMilliseconds(sub.startTime) / this.totalDurationMs) * 100;
-            const widthPercent = (durationSec * 1000 / this.totalDurationMs) * 100;
-
             item.innerHTML = `
                 <input type="checkbox" data-index="${i}" ${sub.selected ? 'checked' : ''}>
                 <div class="subtitle-content">
                     <div class="subtitle-header">
                         <div class="subtitle-time">${sub.startTime} --> ${sub.endTime}</div>
-                        ${cpsWarningHTML}
                     </div>
                     <div class="subtitle-text">${sub.text.replace(/\n/g, '<br>')}</div>
-                    <div class="timeline-bar-container">
-                        <div class="timeline-bar" style="margin-left: ${startPercent}%; width: ${widthPercent}%;"></div>
-                    </div>
                 </div>`;
             
             const checkbox = item.querySelector('input[type="checkbox"]');
@@ -158,7 +135,7 @@ window.SubTools.coordinator = {
 
         const targetSubtitles = this.subtitles.filter(sub => sub.selected);
         if (targetSubtitles.length === 0) {
-            if (nudgeMs > 0) return;
+            if (nudgeMs > 0) return; // Don't prompt if just nudging with no selection
             if (confirm("No subtitles are selected. Apply shift to ALL subtitles?")) {
                 this.subtitles.forEach(sub => this.shiftTime(sub, totalShift));
             }
@@ -190,7 +167,6 @@ window.SubTools.coordinator = {
     },
     
     handleKeyboardShortcuts: function(e) {
-        // Check if the event is happening inside an input field
         if (e.target.tagName === 'INPUT' && e.target.type === 'number') return;
         
         if (e.ctrlKey && e.key.toLowerCase() === 'a') {
@@ -204,11 +180,11 @@ window.SubTools.coordinator = {
         }
         if (e.key === 'ArrowRight') {
             e.preventDefault();
-            this.applyShift(1, 100);
+            this.applyShift(1, 100); // Nudge forward 100ms
         }
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
-            this.applyShift(-1, 100);
+            this.applyShift(-1, 100); // Nudge backward 100ms
         }
     },
     
@@ -252,7 +228,7 @@ window.SubTools.coordinator = {
     parseSrt: function(data) {
         return data.trim().replace(/\r/g, '').split('\n\n').map(block => {
             const lines = block.split('\n');
-            if (lines.length >= 3) {
+            if (lines.length >= 2 && lines[1]?.includes('-->')) {
                 const timeMatch = lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/);
                 if (timeMatch) {
                     return {
@@ -265,6 +241,6 @@ window.SubTools.coordinator = {
                 }
             }
             return null;
-        }).filter(Boolean); // Filter out any null (invalid) blocks
+        }).filter(Boolean);
     }
 };
