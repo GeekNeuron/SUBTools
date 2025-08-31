@@ -1,4 +1,3 @@
-// Combined, final, and corrected scripts for all tools.
 window.SubTools = window.SubTools || {};
 
 // ===================================================================================
@@ -395,4 +394,229 @@ window.SubTools.extractor = {
         this.elements.statusText.textContent = 'Select a video file (MKV, MP4) to begin.';
     },
     triggerDownload: (c, f) => { const a=document.createElement('a');a.href=URL.createObjectURL((typeof c==='string')?new Blob([c],{type:'text/plain;charset=utf-8'}):c);a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a); }
+};
+
+// ===================================================================================
+// TOOL 5: HEALTH CHECKER
+// ===================================================================================
+window.SubTools.checker = {
+    toolContainer: null,
+    subtitles: [],
+    currentFile: null,
+    elements: {},
+
+    init: function(containerId) {
+        this.toolContainer = document.getElementById(containerId);
+        if (!this.toolContainer) return;
+
+        this.elements = {
+            fileInput: this.toolContainer.querySelector('#checker-file-input'),
+            reReadBtn: this.toolContainer.querySelector('#checker-re-read-btn'),
+            encodingFixer: this.toolContainer.querySelector('#checker-encoding-fixer'),
+            resultsCard: this.toolContainer.querySelector('#checker-results-card'),
+            summaryStats: this.toolContainer.querySelector('#checker-summary-stats'),
+            fixCommonBtn: this.toolContainer.querySelector('#checker-fix-common-btn'),
+            removeHiBtn: this.toolContainer.querySelector('#checker-remove-hi-btn'),
+            removeStylesBtn: this.toolContainer.querySelector('#checker-remove-styles-btn'),
+            subtitleList: this.toolContainer.querySelector('#checker-subtitle-list'),
+            outputEncodingSelect: this.toolContainer.querySelector('#checker-output-encoding'),
+            saveBtn: this.toolContainer.querySelector('#checker-save-btn')
+        };
+
+        this.elements.fileInput.addEventListener('change', (e) => this.handleFileSelect(e.target.files[0]));
+        this.elements.reReadBtn.addEventListener('click', () => this.loadFile(this.currentFile, 'windows-1256'));
+        this.elements.fixCommonBtn.addEventListener('click', this.fixCommonIssues.bind(this));
+        this.elements.removeHiBtn.addEventListener('click', this.removeHiTags.bind(this));
+        this.elements.removeStylesBtn.addEventListener('click', this.removeStyleTags.bind(this));
+        this.elements.saveBtn.addEventListener('click', this.saveFile.bind(this));
+        
+        console.log('Health Checker tool initialized.');
+    },
+
+    destroy: function() {
+        this.subtitles = [];
+        this.currentFile = null;
+        if (this.elements.fileInput) this.elements.fileInput.value = "";
+        if (this.elements.resultsCard) this.elements.resultsCard.classList.add('hidden');
+        if (this.elements.encodingFixer) this.elements.encodingFixer.classList.add('hidden');
+        console.log('Health Checker tool destroyed.');
+    },
+
+    handleFileSelect: function(file) {
+        if (!file) return;
+        this.currentFile = file;
+        this.elements.encodingFixer.classList.remove('hidden');
+        this.loadFile(file);
+    },
+
+    loadFile: function(file, encoding = 'UTF-8') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.subtitles = this.parseSrtAdvanced(e.target.result);
+            this.analyzeSubtitles();
+            this.elements.resultsCard.classList.remove('hidden');
+        };
+        reader.readAsText(file, encoding);
+    },
+
+    analyzeSubtitles: function() {
+        const issuesCount = { syntax: 0, overlap: 0, short_duration: 0, long_duration: 0, cpl: 0, cps: 0, formatting: 0 };
+        
+        this.subtitles.forEach((sub, i) => {
+            if (sub.isError) {
+                issuesCount.syntax++;
+                return;
+            }
+            sub.issues = []; // Reset issues for re-analysis
+            
+            // Timing checks
+            if (i < this.subtitles.length - 1 && !this.subtitles[i+1].isError) {
+                if (sub.endTimeMs > this.subtitles[i+1].startTimeMs) {
+                    sub.issues.push({ type: 'overlap', message: 'Overlaps with next subtitle' });
+                    issuesCount.overlap++;
+                }
+            }
+            const duration = sub.endTimeMs - sub.startTimeMs;
+            if (duration < 1000) { sub.issues.push({ type: 'short_duration', message: `Short duration (${duration}ms)` }); issuesCount.short_duration++; }
+            if (duration > 7000) { sub.issues.push({ type: 'long_duration', message: `Long duration (${(duration/1000).toFixed(1)}s)` }); issuesCount.long_duration++; }
+
+            // Text checks
+            const lines = sub.text.split('\n');
+            if (lines.some(line => line.length > 42)) { sub.issues.push({ type: 'cpl', message: 'High characters per line (>42)' }); issuesCount.cpl++; }
+            const cps = duration > 0 ? sub.text.replace(/\s/g, '').length / (duration / 1000) : 0;
+            if (cps > 21) { sub.issues.push({ type: 'cps', message: `High reading speed (${cps.toFixed(1)} CPS)` }); issuesCount.cps++; }
+            if(lines.length > 2) { sub.issues.push({ type: 'formatting', message: 'More than two lines of text' }); issuesCount.formatting++; }
+        });
+        this.renderResults(issuesCount);
+    },
+
+    renderResults: function(issuesCount) {
+        this.elements.subtitleList.innerHTML = '';
+        this.subtitles.forEach(sub => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'subtitle-item';
+            const issueClasses = sub.issues.map(issue => `issue-${issue.type.replace('_', '-')}`);
+            if (sub.isError) issueClasses.push('issue-syntax');
+            itemDiv.classList.add(...issueClasses);
+            
+            let issuesHTML = '<div class="issues">';
+            sub.issues.forEach(issue => {
+                let tagClass = 'issue-tag-info';
+                if (['syntax', 'overlap', 'short_duration'].includes(issue.type)) tagClass = 'issue-tag-danger';
+                else if (['long_duration', 'cpl', 'cps'].includes(issue.type)) tagClass = 'issue-tag-warning';
+                issuesHTML += `<span class="issue-tag ${tagClass}" title="${issue.message}">${issue.type.replace('_', ' ')}</span>`;
+            });
+            issuesHTML += '</div>';
+
+            if (sub.isError) {
+                itemDiv.innerHTML = `<div class="subtitle-header"><span>Block ${sub.index}</span><span style="color:red; font-weight:bold;">SYNTAX ERROR</span></div><div class="raw-block">${sub.raw.replace(/</g, "&lt;")}</div>${issuesHTML}`;
+            } else {
+                 itemDiv.innerHTML = `<div class="subtitle-header"><span>${sub.index}</span><span>${sub.startTime} --> ${sub.endTime}</span></div><div class="subtitle-text">${sub.text.replace(/\n/g, '<br>')}</div>${sub.issues.length > 0 ? issuesHTML : ''}`;
+            }
+            this.elements.subtitleList.appendChild(itemDiv);
+        });
+
+        this.elements.summaryStats.innerHTML = '';
+        if (issuesCount.syntax > 0) this.elements.summaryStats.innerHTML += `<span class="stat-danger">${issuesCount.syntax} Syntax Errors</span>`;
+        if (issuesCount.overlap > 0) this.elements.summaryStats.innerHTML += `<span class="stat-danger">${issuesCount.overlap} Overlaps</span>`;
+        if (issuesCount.short_duration > 0) this.elements.summaryStats.innerHTML += `<span class="stat-danger">${issuesCount.short_duration} Short Durations</span>`;
+        if (issuesCount.long_duration > 0) this.elements.summaryStats.innerHTML += `<span class="stat-warning">${issuesCount.long_duration} Long Durations</span>`;
+        if (issuesCount.cpl > 0) this.elements.summaryStats.innerHTML += `<span class="stat-warning">${issuesCount.cpl} Long Lines</span>`;
+        if (issuesCount.cps > 0) this.elements.summaryStats.innerHTML += `<span class="stat-warning">${issuesCount.cps} High CPS</span>`;
+        if (issuesCount.formatting > 0) this.elements.summaryStats.innerHTML += `<span class="stat-info">${issuesCount.formatting} Formatting Issues</span>`;
+        if (Object.values(issuesCount).every(v => v === 0)) this.elements.summaryStats.innerHTML = `<span class="stat-success">No issues found!</span>`;
+    },
+
+    fixCommonIssues: function() {
+        this.subtitles.forEach((sub, i) => {
+            if (sub.isError) return;
+            if (i < this.subtitles.length - 1 && !this.subtitles[i+1].isError) {
+                if (sub.endTimeMs > this.subtitles[i+1].startTimeMs) {
+                    sub.endTimeMs = this.subtitles[i+1].startTimeMs - 50;
+                }
+            }
+            if (sub.endTimeMs - sub.startTimeMs < 1000) {
+                sub.endTimeMs = sub.startTimeMs + 1000;
+            }
+            sub.startTime = this.millisecondsToTime(sub.startTimeMs);
+            sub.endTime = this.millisecondsToTime(sub.endTimeMs);
+        });
+        this.analyzeSubtitles();
+    },
+
+    removeHiTags: function() {
+        if (!confirm('Are you sure you want to remove all text inside brackets [] and parentheses ()? This cannot be undone.')) return;
+        this.subtitles.forEach(sub => {
+            if (!sub.isError) {
+                sub.text = sub.text.replace(/\[.*?\]/g, '').replace(/\(.*?\)/g, '').replace(/\n\s*\n/g, '\n').trim();
+            }
+        });
+        this.analyzeSubtitles();
+    },
+
+    removeStyleTags: function() {
+        if (!confirm('Are you sure you want to remove all styling tags like <i>, <b>, etc.? This cannot be undone.')) return;
+        this.subtitles.forEach(sub => {
+            if (!sub.isError) {
+                sub.text = sub.text.replace(/<.*?>/g, '').trim();
+            }
+        });
+        this.analyzeSubtitles();
+    },
+
+    saveFile: function() {
+        const validSubtitles = this.subtitles.filter(sub => !sub.isError);
+        const content = this.buildSrt(validSubtitles);
+        const encoding = this.elements.outputEncodingSelect.value;
+        const blob = new Blob([content], { type: `text/plain;charset=${encoding}` });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.currentFile.name.replace('.srt', '_fixed.srt');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
+    
+    parseSrtAdvanced: function(data) {
+        const blocks = data.trim().replace(/\r/g, '').split(/\n\s*\n/);
+        return blocks.map((block, i) => {
+            const lines = block.split('\n');
+            const result = { index: i + 1, raw: block, issues: [], isError: false };
+
+            if (lines.length < 2) {
+                result.isError = true; result.issues.push({ type: 'syntax', message: 'Block has too few lines' }); return result;
+            }
+
+            let timeLineIndex = lines.findIndex(line => line.includes('-->'));
+            
+            if (timeLineIndex === -1) {
+                result.isError = true; result.issues.push({ type: 'syntax', message: 'Timestamp missing or malformed' }); return result;
+            }
+            
+            const timeMatch = lines[timeLineIndex].match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
+            if (!timeMatch) {
+                result.isError = true; result.issues.push({ type: 'syntax', message: `Invalid timestamp format: ${lines[timeLineIndex]}` }); return result;
+            }
+
+            result.index = parseInt(lines[0], 10) || (i + 1);
+            result.startTime = timeMatch[1]; result.endTime = timeMatch[2];
+            result.startTimeMs = this.timeToMilliseconds(result.startTime);
+            result.endTimeMs = this.timeToMilliseconds(result.endTime);
+            result.text = lines.slice(timeLineIndex + 1).join('\n');
+
+            if (result.endTimeMs <= result.startTimeMs) { result.issues.push({ type: 'syntax', message: 'End time is before or same as start time' }); }
+            if (!result.text) { result.issues.push({ type: 'formatting', message: 'Subtitle has no text' }); }
+            if (lines.slice(0, timeLineIndex).some(l => isNaN(parseInt(l, 10)) && l.trim() !== '')) {
+                result.issues.push({ type: 'syntax', message: 'Text found before timestamp' });
+            }
+
+            return result;
+        });
+    },
+
+    buildSrt: function(subs) { return subs.map(s => `${s.index}\n${s.startTime} --> ${s.endTime}\n${s.text}`).join('\n\n') + '\n\n'; },
+    timeToMilliseconds: function(t) { const p = t.match(/(\d{2}):(\d{2}):(\d{2}),(\d{3})/); return p ? (+p[1]*36e5 + +p[2]*6e4 + +p[3]*1e3 + +p[4]) : 0; },
+    millisecondsToTime: function(ms) { if(ms<0)ms=0; let h=Math.floor(ms/36e5);ms%=36e5;let m=Math.floor(ms/6e4);ms%=6e4;let s=Math.floor(ms/1e3); return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms%1e3).padStart(3,'0')}`; }
 };
