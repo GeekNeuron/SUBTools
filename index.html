@@ -65,6 +65,17 @@
                     </main>
                 </div>
             </div>
+            <div id="checker-tool" class="tool-content">
+                <div class="container checker-container">
+                    <header><h1>Advanced Subtitle Health Checker</h1><p>Upload your SRT file to find and fix common and structural errors.</p></header>
+                    <div class="card"><input type="file" id="checker-file-input" accept=".srt"><label for="checker-file-input" class="file-upload-label">Select SRT File</label><div id="checker-encoding-fixer" class="hidden"><p>Is the text unreadable (mojibake)?</p><button id="checker-re-read-btn">Re-read with Farsi/Arabic (Windows) Encoding</button></div></div>
+                    <div class="card hidden" id="checker-results-card">
+                        <div class="summary-bar"><div class="summary-header"><h3>Analysis Results:</h3><div id="checker-summary-stats"></div></div><div class="action-buttons"><button id="checker-fix-common-btn" class="action-btn fix-btn">Fix Common Issues</button><button id="checker-remove-hi-btn" class="action-btn clean-btn">Remove HI Tags</button><button id="checker-remove-styles-btn" class="action-btn clean-btn">Remove Style Tags</button></div></div>
+                        <div id="checker-subtitle-list"></div>
+                        <div class="save-section"><label for="checker-output-encoding">Output Encoding:</label><select id="checker-output-encoding"><option value="UTF-8">UTF-8</option><option value="windows-1256">Windows-1256</option></select><button id="checker-save-btn">Save Fixed File</button></div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
     <footer class="app-footer">Created with ❤️ by GeekNeuron</footer>
