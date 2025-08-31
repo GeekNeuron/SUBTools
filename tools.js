@@ -397,7 +397,7 @@ window.SubTools.extractor = {
 };
 
 // ===================================================================================
-// TOOL 5: HEALTH CHECKER
+// TOOL 5: HEALTH CHECKKER
 // ===================================================================================
 window.SubTools.checker = {
     toolContainer: null,
@@ -418,7 +418,7 @@ window.SubTools.checker = {
             fixCommonBtn: this.toolContainer.querySelector('#checker-fix-common-btn'),
             removeHiBtn: this.toolContainer.querySelector('#checker-remove-hi-btn'),
             removeStylesBtn: this.toolContainer.querySelector('#checker-remove-styles-btn'),
-            subtitleList: this.toolContainer.querySelector('#checker-subtitle-list'),
+            subtitleBody: this.toolContainer.querySelector('#checker-subtitle-body'),
             outputEncodingSelect: this.toolContainer.querySelector('#checker-output-encoding'),
             saveBtn: this.toolContainer.querySelector('#checker-save-btn')
         };
@@ -465,10 +465,14 @@ window.SubTools.checker = {
         this.subtitles.forEach((sub, i) => {
             if (sub.isError) {
                 issuesCount.syntax++;
+                // Add the syntax issue to the object if the parser didn't already
+                if (!sub.issues.some(iss => iss.type === 'syntax')) {
+                    sub.issues.push({ type: 'syntax', message: 'Malformed block' });
+                }
                 return;
             }
-            sub.issues = []; // Reset issues for re-analysis
-            
+            sub.issues = sub.issues.filter(iss => iss.type === 'syntax' || iss.type === 'formatting'); // Keep only parser issues
+
             // Timing checks
             if (i < this.subtitles.length - 1 && !this.subtitles[i+1].isError) {
                 if (sub.endTimeMs > this.subtitles[i+1].startTimeMs) {
@@ -485,37 +489,36 @@ window.SubTools.checker = {
             if (lines.some(line => line.length > 42)) { sub.issues.push({ type: 'cpl', message: 'High characters per line (>42)' }); issuesCount.cpl++; }
             const cps = duration > 0 ? sub.text.replace(/\s/g, '').length / (duration / 1000) : 0;
             if (cps > 21) { sub.issues.push({ type: 'cps', message: `High reading speed (${cps.toFixed(1)} CPS)` }); issuesCount.cps++; }
-            if(lines.length > 2) { sub.issues.push({ type: 'formatting', message: 'More than two lines of text' }); issuesCount.formatting++; }
+            if(lines.length > 2 && !sub.issues.some(iss=>iss.type === 'formatting')) { sub.issues.push({ type: 'formatting', message: 'More than two lines of text' }); issuesCount.formatting++; }
         });
         this.renderResults(issuesCount);
     },
 
     renderResults: function(issuesCount) {
-        this.elements.subtitleList.innerHTML = '';
+        this.elements.subtitleBody.innerHTML = '';
         this.subtitles.forEach(sub => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'subtitle-item';
-            const issueClasses = sub.issues.map(issue => `issue-${issue.type.replace('_', '-')}`);
-            if (sub.isError) issueClasses.push('issue-syntax');
-            itemDiv.classList.add(...issueClasses);
+            const row = document.createElement('tr');
             
-            let issuesHTML = '<div class="issues">';
-            sub.issues.forEach(issue => {
-                let tagClass = 'issue-tag-info';
-                if (['syntax', 'overlap', 'short_duration'].includes(issue.type)) tagClass = 'issue-tag-danger';
-                else if (['long_duration', 'cpl', 'cps'].includes(issue.type)) tagClass = 'issue-tag-warning';
-                issuesHTML += `<span class="issue-tag ${tagClass}" title="${issue.message}">${issue.type.replace('_', ' ')}</span>`;
-            });
-            issuesHTML += '</div>';
+            const issueTypes = sub.issues.map(issue => `issue-${issue.type.replace('_', '-')}`);
+            if (sub.isError) issueTypes.push('issue-syntax');
+            row.classList.add(...issueTypes);
+            row.title = sub.issues.map(issue => issue.message).join(', ');
 
             if (sub.isError) {
-                itemDiv.innerHTML = `<div class="subtitle-header"><span>Block ${sub.index}</span><span style="color:red; font-weight:bold;">SYNTAX ERROR</span></div><div class="raw-block">${sub.raw.replace(/</g, "&lt;")}</div>${issuesHTML}`;
+                row.innerHTML = `
+                    <td class="col-index">${sub.index}</td>
+                    <td colspan="2">
+                        <div class="raw-block">${sub.raw.replace(/</g, "&lt;")}</div>
+                    </td>`;
             } else {
-                 itemDiv.innerHTML = `<div class="subtitle-header"><span>${sub.index}</span><span>${sub.startTime} --> ${sub.endTime}</span></div><div class="subtitle-text">${sub.text.replace(/\n/g, '<br>')}</div>${sub.issues.length > 0 ? issuesHTML : ''}`;
+                 row.innerHTML = `
+                    <td class="col-index">${sub.index}</td>
+                    <td class="col-time">${sub.startTime} --> ${sub.endTime}</td>
+                    <td class="col-text">${sub.text.replace(/\n/g, '<br>')}</td>`;
             }
-            this.elements.subtitleList.appendChild(itemDiv);
+            this.elements.subtitleBody.appendChild(row);
         });
-
+        
         this.elements.summaryStats.innerHTML = '';
         if (issuesCount.syntax > 0) this.elements.summaryStats.innerHTML += `<span class="stat-danger">${issuesCount.syntax} Syntax Errors</span>`;
         if (issuesCount.overlap > 0) this.elements.summaryStats.innerHTML += `<span class="stat-danger">${issuesCount.overlap} Overlaps</span>`;
@@ -541,7 +544,7 @@ window.SubTools.checker = {
             sub.startTime = this.millisecondsToTime(sub.startTimeMs);
             sub.endTime = this.millisecondsToTime(sub.endTimeMs);
         });
-        this.analyzeSubtitles();
+        this.analyzeSubtitles(); // Re-analyze and re-render after fixing
     },
 
     removeHiTags: function() {
@@ -584,34 +587,27 @@ window.SubTools.checker = {
         return blocks.map((block, i) => {
             const lines = block.split('\n');
             const result = { index: i + 1, raw: block, issues: [], isError: false };
-
-            if (lines.length < 2) {
-                result.isError = true; result.issues.push({ type: 'syntax', message: 'Block has too few lines' }); return result;
+            if (lines.length < 2 || (lines.length === 1 && lines[0].trim() === '')) {
+                result.isError = true; result.issues.push({ type: 'syntax', message: 'Block is empty or has too few lines' }); return result;
             }
-
             let timeLineIndex = lines.findIndex(line => line.includes('-->'));
-            
             if (timeLineIndex === -1) {
-                result.isError = true; result.issues.push({ type: 'syntax', message: 'Timestamp missing or malformed' }); return result;
+                result.isError = true; result.issues.push({ type: 'syntax', message: 'Timestamp line missing or malformed' }); return result;
             }
-            
             const timeMatch = lines[timeLineIndex].match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
             if (!timeMatch) {
                 result.isError = true; result.issues.push({ type: 'syntax', message: `Invalid timestamp format: ${lines[timeLineIndex]}` }); return result;
             }
-
             result.index = parseInt(lines[0], 10) || (i + 1);
             result.startTime = timeMatch[1]; result.endTime = timeMatch[2];
             result.startTimeMs = this.timeToMilliseconds(result.startTime);
             result.endTimeMs = this.timeToMilliseconds(result.endTime);
-            result.text = lines.slice(timeLineIndex + 1).join('\n');
-
+            result.text = lines.slice(timeLineIndex + 1).join('\n').trim();
             if (result.endTimeMs <= result.startTimeMs) { result.issues.push({ type: 'syntax', message: 'End time is before or same as start time' }); }
             if (!result.text) { result.issues.push({ type: 'formatting', message: 'Subtitle has no text' }); }
-            if (lines.slice(0, timeLineIndex).some(l => isNaN(parseInt(l, 10)) && l.trim() !== '')) {
-                result.issues.push({ type: 'syntax', message: 'Text found before timestamp' });
+            if (timeLineIndex > 1 || (timeLineIndex === 1 && isNaN(parseInt(lines[0], 10)))){
+                result.issues.push({ type: 'syntax', message: 'Text or invalid index found before timestamp' });
             }
-
             return result;
         });
     },
