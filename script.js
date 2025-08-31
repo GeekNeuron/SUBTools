@@ -1,4 +1,4 @@
-// Main Hub Script for Sub Tools
+// Main Hub Script for Sub Tools - FINAL CORRECTED VERSION
 
 document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
@@ -8,15 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Shows a specific tool and initializes its script.
      * It also cleans up the previously active tool.
-     * @param {string} toolId The ID of the tool's container div (e.g., 'coordinator-tool').
+     * @param {string} toolName The name of the tool from data-tool (e.g., 'coordinator').
      */
-    function showTool(toolId) {
+    function showTool(toolName) {
         // --- 1. Cleanup the previously active tool ---
         if (activeToolName && window.SubTools && typeof window.SubTools[activeToolName]?.destroy === 'function') {
             window.SubTools[activeToolName].destroy();
         }
 
         // --- 2. Update the UI ---
+        const toolId = toolName + '-tool'; // CORRECTLY CONSTRUCT THE ID (e.g., 'coordinator-tool')
+
         // Hide all tool content divs
         toolContents.forEach(content => content.classList.remove('active'));
         // Deactivate all navigation links
@@ -24,16 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show the target tool's content and activate its link
         const targetContent = document.getElementById(toolId);
-        const targetLink = document.querySelector(`.nav-link[data-tool="${toolId}"]`);
+        const targetLink = document.querySelector(`.nav-link[data-tool="${toolName}"]`);
         
         if (targetContent) targetContent.classList.add('active');
         if (targetLink) targetLink.classList.add('active');
         
         // --- 3. Initialize the new tool's script ---
-        // Extract the tool's name from its ID (e.g., 'coordinator-tool' -> 'coordinator')
-        const toolName = toolId.split('-')[0];
         if (window.SubTools && typeof window.SubTools[toolName]?.init === 'function') {
-            // Call the init method, passing the container ID
+            // Call the init method, passing the correct container ID
             window.SubTools[toolName].init(toolId);
             activeToolName = toolName; // Set the new active tool
         } else {
@@ -46,21 +46,19 @@ document.addEventListener('DOMContentLoaded', () => {
     navLinks.forEach(link => {
         link.addEventListener('click', (event) => {
             event.preventDefault();
-            const toolId = link.getAttribute('data-tool');
-            if (toolId) {
-                showTool(toolId);
+            const toolName = link.getAttribute('data-tool');
+            if (toolName) {
+                showTool(toolName);
             }
         });
     });
 
     // --- Initialize the default tool on page load ---
-    // The default tool is the one that has the 'active' class in the HTML
     const defaultActiveLink = document.querySelector('.nav-link.active');
     if (defaultActiveLink) {
-        const defaultToolId = defaultActiveLink.getAttribute('data-tool');
-        showTool(defaultToolId);
+        const defaultToolName = defaultActiveLink.getAttribute('data-tool');
+        showTool(defaultToolName);
     } else {
-        // Fallback if no tool is marked as active in the HTML
         console.warn("No default active tool found. Please add the 'active' class to a nav link in index.html.");
     }
 });
