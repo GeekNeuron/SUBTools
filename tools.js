@@ -397,7 +397,7 @@ window.SubTools.extractor = {
 };
 
 // ===================================================================================
-// TOOL 5: HEALTH CHECKKER
+// TOOL 5: HEALTH CHECKER
 // ===================================================================================
 window.SubTools.checker = {
     toolContainer: null,
@@ -439,6 +439,8 @@ window.SubTools.checker = {
         if (this.elements.fileInput) this.elements.fileInput.value = "";
         if (this.elements.resultsCard) this.elements.resultsCard.classList.add('hidden');
         if (this.elements.encodingFixer) this.elements.encodingFixer.classList.add('hidden');
+        if (this.elements.subtitleBody) this.elements.subtitleBody.innerHTML = '';
+        if (this.elements.summaryStats) this.elements.summaryStats.innerHTML = '';
         console.log('Health Checker tool destroyed.');
     },
 
@@ -463,33 +465,34 @@ window.SubTools.checker = {
         const issuesCount = { syntax: 0, overlap: 0, short_duration: 0, long_duration: 0, cpl: 0, cps: 0, formatting: 0 };
         
         this.subtitles.forEach((sub, i) => {
+            // Start with parser issues
+            sub.issues = sub.issues.filter(issue => issue.type === 'syntax' || issue.type === 'formatting');
             if (sub.isError) {
                 issuesCount.syntax++;
-                // Add the syntax issue to the object if the parser didn't already
-                if (!sub.issues.some(iss => iss.type === 'syntax')) {
-                    sub.issues.push({ type: 'syntax', message: 'Malformed block' });
-                }
-                return;
+                return; // Skip further checks for blocks with syntax errors
             }
-            sub.issues = sub.issues.filter(iss => iss.type === 'syntax' || iss.type === 'formatting'); // Keep only parser issues
 
             // Timing checks
             if (i < this.subtitles.length - 1 && !this.subtitles[i+1].isError) {
                 if (sub.endTimeMs > this.subtitles[i+1].startTimeMs) {
                     sub.issues.push({ type: 'overlap', message: 'Overlaps with next subtitle' });
-                    issuesCount.overlap++;
                 }
             }
             const duration = sub.endTimeMs - sub.startTimeMs;
-            if (duration < 1000) { sub.issues.push({ type: 'short_duration', message: `Short duration (${duration}ms)` }); issuesCount.short_duration++; }
-            if (duration > 7000) { sub.issues.push({ type: 'long_duration', message: `Long duration (${(duration/1000).toFixed(1)}s)` }); issuesCount.long_duration++; }
+            if (duration < 1000) { sub.issues.push({ type: 'short_duration', message: `Short duration (${duration}ms)` }); }
+            if (duration > 7000) { sub.issues.push({ type: 'long_duration', message: `Long duration (${(duration/1000).toFixed(1)}s)` }); }
 
             // Text checks
             const lines = sub.text.split('\n');
-            if (lines.some(line => line.length > 42)) { sub.issues.push({ type: 'cpl', message: 'High characters per line (>42)' }); issuesCount.cpl++; }
+            if (lines.some(line => line.length > 42)) { sub.issues.push({ type: 'cpl', message: 'High characters per line (>42)' }); }
             const cps = duration > 0 ? sub.text.replace(/\s/g, '').length / (duration / 1000) : 0;
-            if (cps > 21) { sub.issues.push({ type: 'cps', message: `High reading speed (${cps.toFixed(1)} CPS)` }); issuesCount.cps++; }
-            if(lines.length > 2 && !sub.issues.some(iss=>iss.type === 'formatting')) { sub.issues.push({ type: 'formatting', message: 'More than two lines of text' }); issuesCount.formatting++; }
+            if (cps > 21) { sub.issues.push({ type: 'cps', message: `High reading speed (${cps.toFixed(1)} CPS)` }); }
+            if (lines.length > 2) { sub.issues.push({ type: 'formatting', message: 'More than two lines of text' }); }
+
+            // Update counts from all issues found
+            sub.issues.forEach(issue => {
+                if(issuesCount[issue.type] !== undefined) issuesCount[issue.type]++;
+            });
         });
         this.renderResults(issuesCount);
     },
@@ -499,9 +502,9 @@ window.SubTools.checker = {
         this.subtitles.forEach(sub => {
             const row = document.createElement('tr');
             
-            const issueTypes = sub.issues.map(issue => `issue-${issue.type.replace('_', '-')}`);
-            if (sub.isError) issueTypes.push('issue-syntax');
-            row.classList.add(...issueTypes);
+            const issueClasses = sub.issues.map(issue => `issue-${issue.type.replace('_', '-')}`);
+            if (sub.isError) issueClasses.push('issue-syntax');
+            row.className = issueClasses.join(' '); // Use className to overwrite previous classes
             row.title = sub.issues.map(issue => issue.message).join(', ');
 
             if (sub.isError) {
@@ -533,14 +536,17 @@ window.SubTools.checker = {
     fixCommonIssues: function() {
         this.subtitles.forEach((sub, i) => {
             if (sub.isError) return;
+            // Fix overlaps
             if (i < this.subtitles.length - 1 && !this.subtitles[i+1].isError) {
                 if (sub.endTimeMs > this.subtitles[i+1].startTimeMs) {
                     sub.endTimeMs = this.subtitles[i+1].startTimeMs - 50;
                 }
             }
+            // Fix short duration
             if (sub.endTimeMs - sub.startTimeMs < 1000) {
                 sub.endTimeMs = sub.startTimeMs + 1000;
             }
+            // Update time strings after modification
             sub.startTime = this.millisecondsToTime(sub.startTimeMs);
             sub.endTime = this.millisecondsToTime(sub.endTimeMs);
         });
